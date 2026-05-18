@@ -460,6 +460,260 @@ const THEME_CAPTIONS = {
   '宝宝成长': ['6个月','9个月','1岁','1岁3月','1岁6月','2岁'],
 };
 
+/** 全屏相册（原型）：深色、按日期分组、便于从大量素材中选择 */
+const ALBUM_GROUPS = (() => {
+  const dates = ['2026年5月17日', '2026年5月16日', '2026年5月12日', '2026年5月8日'];
+  return dates.map((date, di) => {
+    const items = [];
+    const count = di === 0 ? 20 : 12;
+    for (let i = 0; i < count; i += 1) {
+      if (di === 0 && i === 4) {
+        items.push({ kind: 'wechat', id: `${date}-wx` });
+      }
+      items.push({
+        kind: 'photo',
+        id: `${date}-p${i}`,
+        src: PREVIEW_PHOTOS[(di * 16 + i) % PREVIEW_PHOTOS.length],
+        live: i % 5 === 0,
+      });
+    }
+    return { date, items };
+  });
+})();
+
+function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
+  const fileRef = React.useRef(null);
+  const [selectedSrc, setSelectedSrc] = useState(initialSrc || null);
+
+  const selectAllInDate = (date) => {
+    const g = ALBUM_GROUPS.find((x) => x.date === date);
+    if (!g) return;
+    const first = g.items.find((it) => it.kind === 'photo');
+    if (first?.src) setSelectedSrc(first.src);
+  };
+
+  const bg = '#000000';
+  const text = 'rgba(255,255,255,0.9)';
+  const textSub = 'rgba(255,255,255,0.48)';
+  const pink = '#ff4d88';
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 400,
+      background: bg,
+      display: 'flex', flexDirection: 'column',
+      fontFamily: FONT_SANS, color: text,
+    }}>
+      {/* 顶栏 */}
+      <div style={{
+        flexShrink: 0,
+        padding: '48px 12px 10px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            width: 36, height: 36, border: 'none', borderRadius: 8,
+            background: 'transparent', color: text, cursor: 'pointer',
+            fontSize: 20, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          aria-label="关闭"
+        >
+          ✕
+        </button>
+        <button
+          type="button"
+          style={{
+            border: 'none', background: 'transparent', color: text,
+            fontSize: 16, fontWeight: 500, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          最近项目
+          <span style={{ fontSize: 10, opacity: 0.8 }}>▼</span>
+        </button>
+        <div style={{ width: 36 }} />
+      </div>
+
+      {/* 可滚动网格 */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        {ALBUM_GROUPS.map((group) => (
+          <div key={group.date}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '8px 14px 6px', position: 'sticky', top: 0,
+              background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(12px)',
+              borderBottom: '0.5px solid rgba(255,255,255,0.08)',
+            }}>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{group.date}</span>
+              <button
+                type="button"
+                onClick={() => selectAllInDate(group.date)}
+                style={{
+                  border: 'none', background: 'transparent',
+                  color: pink, fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                  padding: '4px 0',
+                }}
+              >
+                全选
+              </button>
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 2,
+              padding: '0 2px 12px',
+            }}>
+              {group.items.map((it) => {
+                if (it.kind === 'wechat') {
+                  return (
+                    <button
+                      key={it.id}
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      style={{
+                        aspectRatio: '1', border: 'none', padding: 0, margin: 0,
+                        background: '#2c2c2e', borderRadius: 2,
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center', gap: 6,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{
+                        width: 28, height: 28, borderRadius: 6, background: '#07c160',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 15, lineHeight: 1, color: '#fff', fontWeight: 500,
+                      }}>微</span>
+                      <span style={{ fontSize: 11, color: textSub }}>从微信导入</span>
+                    </button>
+                  );
+                }
+                const sel = selectedSrc === it.src;
+                return (
+                  <button
+                    key={it.id}
+                    type="button"
+                    onClick={() => setSelectedSrc(it.src)}
+                    style={{
+                      aspectRatio: '1', padding: 0, margin: 0, border: 'none',
+                      borderRadius: 2, overflow: 'hidden', position: 'relative',
+                      cursor: 'pointer',
+                      boxShadow: sel ? `inset 0 0 0 2px ${pink}` : 'none',
+                    }}
+                  >
+                    <img src={it.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    {it.live && (
+                      <div style={{
+                        position: 'absolute', bottom: 5, left: 5,
+                        width: 14, height: 14, pointerEvents: 'none',
+                      }}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+                          <circle cx="12" cy="12" r="9" stroke="#fff" strokeOpacity="0.9" strokeWidth="1.5" />
+                          <circle cx="12" cy="12" r="4" fill="#fff" fillOpacity="0.95" />
+                        </svg>
+                      </div>
+                    )}
+                    <div style={{
+                      position: 'absolute', top: 5, right: 5,
+                      width: 18, height: 18, borderRadius: 9,
+                      border: sel ? 'none' : '1.5px solid rgba(255,255,255,0.92)',
+                      background: sel ? pink : 'rgba(0,0,0,0.25)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, color: '#fff', fontWeight: 500,
+                      boxSizing: 'border-box',
+                    }}>
+                      {sel ? '✓' : ''}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) {
+            const url = URL.createObjectURL(f);
+            onApply(url);
+          }
+          e.target.value = '';
+        }}
+      />
+
+      {/* 底部操作条 */}
+      <div style={{
+        flexShrink: 0,
+        padding: '10px 14px 6px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        borderTop: '0.5px solid rgba(255,255,255,0.1)',
+        background: '#0a0a0a',
+      }}>
+        <span style={{ fontSize: 14, color: selectedSrc ? text : textSub }}>预览</span>
+        <button
+          type="button"
+          style={{
+            border: 'none', background: 'transparent',
+            color: text, fontSize: 14, fontWeight: 500, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          超高清
+          <span style={{ fontSize: 9 }}>▲</span>
+        </button>
+        <button
+          type="button"
+          disabled={!selectedSrc}
+          onClick={() => selectedSrc && onApply(selectedSrc)}
+          style={{
+            minWidth: 80, height: 36, padding: '0 18px', borderRadius: 8, border: 'none',
+            background: selectedSrc ? pink : 'rgba(255,255,255,0.18)',
+            color: selectedSrc ? '#fff' : textSub,
+            fontSize: 15, fontWeight: 500, cursor: selectedSrc ? 'pointer' : 'default',
+          }}
+        >
+          完成
+        </button>
+      </div>
+
+      {/* 底部模式切换 */}
+      <div style={{
+        flexShrink: 0,
+        display: 'flex', justifyContent: 'space-around',
+        alignItems: 'center',
+        padding: '10px 4px 22px',
+        background: '#0a0a0a',
+        borderTop: '0.5px solid rgba(255,255,255,0.06)',
+        fontSize: 11, color: textSub,
+      }}>
+        {['AI 智能识别', '相册', '拍小视频', '拍照'].map((label, i) => (
+          <div
+            key={label}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              color: i === 1 ? text : textSub,
+              fontWeight: i === 1 ? 500 : 400,
+            }}
+          >
+            {label}
+            <span style={{
+              width: 4, height: 4, borderRadius: 2,
+              background: i === 1 ? text : 'transparent',
+            }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LayoutPreview({ layoutId, captionTexts = [], photos: userPhotos = [], onCellTap, onPickPhoto, editable = false }) {
   const hasCaption = layoutId.endsWith('-c');
   const baseId = layoutId.replace(/-c$/, '');
@@ -1032,102 +1286,19 @@ function LayoutPickerPage({ onBack, onConfirm }) {
         </button>
       </div>
 
-      {/* ── 照片选择器 sheet（换一张）── */}
+      {/* ── 全屏相册：替换照片（非浮层，便于大量选图）── */}
       {pickerCell !== null && (
-        <>
-          {/* 半透明遮罩，背后海报仍可见 */}
-          <div
-            onClick={() => setPickerCell(null)}
-            style={{
-              position: 'absolute', inset: 0, zIndex: 300,
-              background: 'rgba(20,8,12,0.45)',
-            }}
-          />
-          {/* 底部 sheet */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 301,
-            background: '#fff', borderRadius: '16px 16px 0 0',
-            paddingBottom: 28,
-            boxShadow: '0 -4px 24px rgba(80,30,40,0.14)',
-          }}>
-            {/* 拖拽手柄 */}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: C.line }} />
-            </div>
-
-            {/* 标题 */}
-            <div style={{
-              padding: '8px 18px 4px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: C.ink }}>换一张</div>
-                <div style={{ fontSize: 11, color: C.mute, marginTop: 2 }}>从你已上传的孕期照片中选择</div>
-              </div>
-              <button onClick={() => setPickerCell(null)} style={{
-                width: 28, height: 28, borderRadius: 14,
-                background: C.cream, border: 'none', cursor: 'pointer',
-                fontSize: 14, color: C.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>✕</button>
-            </div>
-
-            {/* 从相册上传新照片（高价值，最顶部）*/}
-            <div style={{ padding: '10px 18px 8px' }}>
-              <button
-                onClick={() => { replaceCell(pickerCell, null); setPickerCell(null); }}
-                style={{
-                  width: '100%', height: 44, borderRadius: 10, border: 0,
-                  background: `linear-gradient(135deg, #ff6e9c 0%, ${C.pink} 100%)`,
-                  color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  boxShadow: '0 4px 14px rgba(255,91,138,0.35)',
-                }}>
-                <span>📷</span>
-                <span>从相册上传新照片</span>
-              </button>
-            </div>
-
-            <div style={{ height: 0.5, background: C.line, margin: '0 18px 10px' }} />
-
-            {/* 已上传照片网格 */}
-            <div style={{ padding: '0 18px', }}>
-              <div style={{ fontSize: 11, color: C.mute, marginBottom: 8 }}>已上传的照片</div>
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4,
-              }}>
-                {PREVIEW_PHOTOS.map((src, i) => {
-                  const isCurrently = (previewPhotos[pickerCell] ?? PREVIEW_PHOTOS[pickerCell % PREVIEW_PHOTOS.length]) === src;
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => {
-                        setCellPhotos((prev) => ({ ...prev, [pickerCell]: src }));
-                        setPickerCell(null);
-                      }}
-                      style={{
-                        aspectRatio: '1', borderRadius: 6, overflow: 'hidden',
-                        cursor: 'pointer', position: 'relative',
-                        border: isCurrently ? `2px solid ${C.pink}` : '2px solid transparent',
-                        boxShadow: isCurrently ? `0 0 0 1px ${C.pinkSoft}` : 'none',
-                      }}
-                    >
-                      <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      {isCurrently && (
-                        <div style={{
-                          position: 'absolute', top: 4, right: 4,
-                          width: 16, height: 16, borderRadius: 8,
-                          background: C.pink, color: '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 9, fontWeight: 700,
-                        }}>✓</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </>
+        <AlbumPhotoPickerOverlay
+          key={pickerCell}
+          initialSrc={
+            cellPhotos[pickerCell] ?? PREVIEW_PHOTOS[pickerCell % PREVIEW_PHOTOS.length]
+          }
+          onClose={() => setPickerCell(null)}
+          onApply={(src) => {
+            setCellPhotos((prev) => ({ ...prev, [pickerCell]: src }));
+            setPickerCell(null);
+          }}
+        />
       )}
     </div>
   );
