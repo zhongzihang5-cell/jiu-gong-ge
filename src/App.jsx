@@ -1134,7 +1134,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
 }
 
 // ── 首页 ──────────────────────────────────────────────────────
-function PuzzlePage({ onGenerate }) {
+function PuzzlePage({ onGenerate, onWorks }) {
   const [previewIdx, setPreviewIdx] = useState(0);
   const [counter, setCounter] = useState(12847);
   const [scrolled, setScrolled] = useState(false);
@@ -1319,7 +1319,7 @@ function PuzzlePage({ onGenerate }) {
           </svg>
         </button>
         <div style={{ fontSize: 16, fontWeight: 600, color: C.ink }}>成长纪念卡</div>
-        <div style={{ width: 36, height: 36 }} />
+        <WorksIcon onClick={onWorks} />
       </div>
 
       {/* 底部 CTA */}
@@ -1343,8 +1343,7 @@ function PuzzlePage({ onGenerate }) {
   );
 }
 
-// ── 完成页（纪念卡已保存）────────────────────────────────────────
-// 撒花动效 CSS（注入一次）
+// ── 撒花动效 CSS ──────────────────────────────────────────────
 const CONFETTI_STYLE = `
 @keyframes confettiFall {
   0%   { transform: translateY(-30px) rotate(0deg) scaleX(1);   opacity: 1; }
@@ -1355,10 +1354,85 @@ const CONFETTI_STYLE = `
   0%,100% { margin-left: 0px; }
   33%     { margin-left: 12px; }
   66%     { margin-left: -10px; }
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }`;
 
-function CompletionPage({ onClose, onPrint }) {
-  // 注入动画样式
+// ── 我的作品图标（复用于首页和完成页）──────────────────────────
+function WorksIcon({ onClick }) {
+  return (
+    <button onClick={onClick} aria-label="我的作品" style={{
+      width: 36, height: 36, border: 0, background: 'transparent',
+      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/>
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/>
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/>
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>
+      </svg>
+    </button>
+  );
+}
+
+// ── 分享浮窗（底部上滑）─────────────────────────────────────────
+const SHARE_APPS = [
+  { name: '微信好友', bg: '#07C160', icon: '💬' },
+  { name: '朋友圈',  bg: '#FA8919', icon: '⊙' },
+  { name: '抖音',    bg: '#000',    icon: '♪' },
+  { name: '小红书',  bg: '#FE2C55', icon: '✦' },
+];
+
+function ShareSheet({ onClose }) {
+  return (
+    <>
+      {/* 遮罩 */}
+      <div onClick={onClose} style={{
+        position: 'absolute', inset: 0, zIndex: 200,
+        background: 'rgba(20,8,12,0.40)',
+      }} />
+      {/* Sheet 主体 */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 201,
+        background: '#fff', borderRadius: '16px 16px 0 0',
+        padding: '0 20px 36px',
+        boxShadow: '0 -4px 24px rgba(80,30,40,0.12)',
+        animation: 'sheetUp 0.32s cubic-bezier(.4,0,.2,1)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 6px' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: C.line }} />
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 600, textAlign: 'center', padding: '8px 0 18px', color: C.ink }}>
+          分享纪念卡
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 20 }}>
+          {SHARE_APPS.map((app) => (
+            <div key={app.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 28, background: app.bg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, color: '#fff',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              }}>{app.icon}</div>
+              <div style={{ fontSize: 11, color: C.ink2 }}>{app.name}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} style={{
+          width: '100%', height: 44, borderRadius: 12, border: 0,
+          background: C.cream, color: C.ink2, fontSize: 15, cursor: 'pointer',
+        }}>取消</button>
+      </div>
+    </>
+  );
+}
+
+// ── 完成页 ──────────────────────────────────────────────────────
+function CompletionPage({ onClose, onWorks }) {
+  const [shareOpen, setShareOpen] = useState(false);
+
   React.useEffect(() => {
     const id = 'confetti-keyframes';
     if (!document.getElementById(id)) {
@@ -1368,148 +1442,186 @@ function CompletionPage({ onClose, onPrint }) {
     }
   }, []);
 
-  // 30 个撒花粒子
   const pieces = React.useMemo(() => {
     const colors = ['#ff5b8a','#ffd27a','#a8d8ea','#c9b8ff','#ffb3c8','#7ed8b4','#ff9e6e','#b8d4ff'];
     return Array.from({ length: 30 }, (_, i) => ({
-      left:    `${(i * 37 + 3) % 100}%`,
-      w:       [6, 8, 10, 5, 9][i % 5],
-      h:       [14, 8, 18, 10, 6][i % 5],
-      bg:      colors[i % colors.length],
-      dur:     `${3.2 + (i % 7) * 0.5}s`,
-      delay:   `${(i % 9) * 0.25}s`,
-      sway:    `${1.8 + (i % 4) * 0.6}s`,
-      radius:  i % 3 === 0 ? '50%' : '2px',
+      left:  `${(i * 37 + 3) % 100}%`,
+      w:     [6, 8, 10, 5, 9][i % 5],
+      h:     [14, 8, 18, 10, 6][i % 5],
+      bg:    colors[i % colors.length],
+      dur:   `${3.2 + (i % 7) * 0.5}s`,
+      delay: `${(i % 9) * 0.25}s`,
+      sway:  `${1.8 + (i % 4) * 0.6}s`,
+      radius: i % 3 === 0 ? '50%' : '2px',
     }));
   }, []);
-
-  const SHARE_APPS = [
-    { name: '微信好友', bg: '#07C160', icon: '💬' },
-    { name: '朋友圈',  bg: '#FA8919', icon: '⊙' },
-    { name: '抖音',    bg: '#000',    icon: '♪' },
-    { name: '小红书',  bg: '#FE2C55', icon: '✦' },
-  ];
 
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative',
-      overflow: 'hidden',                         /* 裁切撒花，不超出手机边框 */
+      overflow: 'hidden',
       background: 'linear-gradient(180deg, #fff5f8 0%, #fffaf6 55%, #fff 100%)',
       fontFamily: FONT_SANS, color: C.ink,
     }}>
-
-      {/* ── 撒花动效（absolute，被外层裁切）── */}
+      {/* 撒花 */}
       {pieces.map((p, i) => (
         <div key={i} style={{
           position: 'absolute', left: p.left, top: 0,
           width: p.w, height: p.h, borderRadius: p.radius,
           background: p.bg, opacity: 0.82,
-          animation:
-            `confettiFall ${p.dur} ${p.delay} ease-in infinite,` +
-            `confettiSway ${p.sway} ${p.delay} ease-in-out infinite`,
+          animation: `confettiFall ${p.dur} ${p.delay} ease-in infinite, confettiSway ${p.sway} ${p.delay} ease-in-out infinite`,
           pointerEvents: 'none', zIndex: 50,
         }} />
       ))}
 
-      {/* ── 可滚动内容区 ── */}
+      {/* 可滚动内容 */}
       <div style={{
         position: 'absolute', inset: 0, overflowY: 'auto',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        paddingBottom: 32,
+        paddingBottom: 36,
       }}>
-
-      {/* 关闭按钮 */}
-      <button onClick={onClose} style={{
-        position: 'absolute', top: 52, left: 18, zIndex: 60,
-        width: 32, height: 32, border: 0, background: 'transparent',
-        cursor: 'pointer', fontSize: 20, color: C.ink2,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>✕</button>
-
-      {/* 标题 */}
-      <div style={{ marginTop: 68, textAlign: 'center', position: 'relative', zIndex: 10 }}>
+        {/* 顶部导航：关闭 + 我的作品 */}
         <div style={{
-          fontFamily: FONT_SERIF, fontSize: 30, fontWeight: 700,
-          color: C.ink, letterSpacing: 1,
-        }}>纪念卡已保存</div>
-        <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>
-          已自动保存至时间轴
-        </div>
-      </div>
-
-      {/* 纪念卡预览（放大 + 精致边框 + 美柚水印）*/}
-      <div style={{
-        marginTop: 20, width: 290, position: 'relative', zIndex: 10,
-        border: '1.5px solid #8b7355',
-        borderRadius: 4,
-        boxShadow:
-          'inset 0 0 0 5px #fff,' +
-          'inset 0 0 0 6px rgba(139,115,85,0.20),' +
-          '0 16px 40px rgba(80,30,40,0.22)',
-        background: '#fffaf6',
-        overflow: 'hidden',
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2, padding: 2 }}>
-          {PREVIEW_PHOTOS.slice(0, 9).map((src, i) => (
-            <div key={i} style={{ aspectRatio: '1', overflow: 'hidden', background: '#ddd6cf' }}>
-              <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            </div>
-          ))}
-        </div>
-        <div style={{
-          padding: '10px 14px 12px', textAlign: 'center',
-          borderTop: '0.5px solid rgba(139,115,85,0.18)',
-          position: 'relative',
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '52px 14px 0', position: 'sticky', top: 0, zIndex: 60,
         }}>
-          <div style={{ fontFamily: FONT_SERIF, fontSize: 15, fontWeight: 700, letterSpacing: 5, color: '#2a1f0a' }}>豆 豆</div>
-          <div style={{ fontSize: 8.5, color: '#8b7355', marginTop: 4, letterSpacing: 0.5 }}>
-            BIRTHDAY · 2026.06.28 · WEIGHT · 3200G · HEIGHT · 50CM
+          <button onClick={onClose} style={{
+            width: 36, height: 36, border: 0, background: 'transparent',
+            cursor: 'pointer', fontSize: 20, color: C.ink2,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>✕</button>
+          <WorksIcon onClick={onWorks} />
+        </div>
+
+        {/* 标题 */}
+        <div style={{ marginTop: 16, textAlign: 'center', position: 'relative', zIndex: 10 }}>
+          <div style={{ fontFamily: FONT_SERIF, fontSize: 30, fontWeight: 700, color: C.ink, letterSpacing: 1 }}>
+            纪念卡已保存
           </div>
-          <div style={{
-            position: 'absolute', bottom: 6, right: 10,
-            fontSize: 8, color: C.pink, opacity: 0.65,
-            fontWeight: 600, letterSpacing: 0.5,
-          }}>美柚</div>
+          <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>已自动保存至时间轴</div>
         </div>
-      </div>
 
-      {/* 立即印制 */}
-      <div style={{ marginTop: 20, width: '100%', padding: '0 24px', position: 'relative', zIndex: 10 }}>
-        <button onClick={onPrint} style={{
-          width: '100%', height: 48, borderRadius: 26, border: 0,
-          background: `linear-gradient(135deg, #ff6e9c 0%, ${C.pink} 100%)`,
-          color: '#fff', fontSize: 16, fontWeight: 700,
-          cursor: 'pointer', letterSpacing: 1,
-          boxShadow: '0 8px 18px -6px rgba(255,91,138,0.5)',
-        }}>立即印制</button>
-      </div>
-
-      {/* 分享到 */}
-      <div style={{ marginTop: 20, textAlign: 'center', width: '100%', position: 'relative', zIndex: 10 }}>
+        {/* 纪念卡预览 */}
         <div style={{
-          fontSize: 12, color: C.mute, marginBottom: 14,
-          display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center',
+          marginTop: 20, width: 290, position: 'relative', zIndex: 10,
+          border: '1.5px solid #8b7355', borderRadius: 4,
+          boxShadow: 'inset 0 0 0 5px #fff, inset 0 0 0 6px rgba(139,115,85,0.20), 0 16px 40px rgba(80,30,40,0.22)',
+          background: '#fffaf6', overflow: 'hidden',
         }}>
-          <div style={{ flex: 1, height: 0.5, background: C.line, maxWidth: 60 }} />
-          分享到
-          <div style={{ flex: 1, height: 0.5, background: C.line, maxWidth: 60 }} />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
-          {SHARE_APPS.map((app) => (
-            <div key={app.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 26, background: app.bg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 22, color: '#fff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-              }}>{app.icon}</div>
-              <div style={{ fontSize: 10, color: C.ink2 }}>{app.name}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2, padding: 2 }}>
+            {PREVIEW_PHOTOS.slice(0, 9).map((src, i) => (
+              <div key={i} style={{ aspectRatio: '1', overflow: 'hidden', background: '#ddd6cf' }}>
+                <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: '10px 14px 12px', textAlign: 'center', borderTop: '0.5px solid rgba(139,115,85,0.18)', position: 'relative' }}>
+            <div style={{ fontFamily: FONT_SERIF, fontSize: 15, fontWeight: 700, letterSpacing: 5, color: '#2a1f0a' }}>豆 豆</div>
+            <div style={{ fontSize: 8.5, color: '#8b7355', marginTop: 4, letterSpacing: 0.5 }}>
+              BIRTHDAY · 2026.06.28 · WEIGHT · 3200G · HEIGHT · 50CM
             </div>
-          ))}
+            <div style={{ position: 'absolute', bottom: 6, right: 10, fontSize: 8, color: C.pink, opacity: 0.65, fontWeight: 600, letterSpacing: 0.5 }}>美柚</div>
+          </div>
+        </div>
+
+        {/* 按钮区 */}
+        <div style={{ marginTop: 22, width: '100%', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', zIndex: 10 }}>
+          {/* 主按钮：再做一张 */}
+          <button onClick={onClose} style={{
+            width: '100%', height: 50, borderRadius: 26, border: 0,
+            background: `linear-gradient(135deg, #ff6e9c 0%, ${C.pink} 100%)`,
+            color: '#fff', fontSize: 16, fontWeight: 700,
+            cursor: 'pointer', letterSpacing: 1,
+            boxShadow: '0 8px 18px -6px rgba(255,91,138,0.5)',
+          }}>再做一张</button>
+          {/* 副按钮：保存并分享 */}
+          <button onClick={() => setShareOpen(true)} style={{
+            width: '100%', height: 50, borderRadius: 26, border: `1.5px solid ${C.pinkSoft}`,
+            background: '#fff', color: C.pink, fontSize: 16, fontWeight: 600,
+            cursor: 'pointer', letterSpacing: 0.5,
+          }}>保存并分享</button>
         </div>
       </div>
 
-      </div>  {/* end 可滚动内容区 */}
+      {/* 分享浮窗 */}
+      {shareOpen && <ShareSheet onClose={() => setShareOpen(false)} />}
+    </div>
+  );
+}
+
+// ── 我的作品页 ───────────────────────────────────────────────────
+const MOCK_WORKS = [
+  { id: 1, name: '豆豆的成长纪念卡', date: '2026.05.18', photos: [0,1,2,3,4,5,6,7,8] },
+  { id: 2, name: '豆豆的成长纪念卡', date: '2026.05.15', photos: [1,2,3,4,5,6,0,7,2] },
+  { id: 3, name: '豆豆的成长纪念卡', date: '2026.05.10', photos: [3,4,5,0,1,6,2,7,1] },
+];
+
+function WorksPage({ onBack }) {
+  return (
+    <div style={{
+      width: '100%', height: '100%', overflow: 'hidden', position: 'relative',
+      background: C.paper, fontFamily: FONT_SANS, color: C.ink,
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* 导航 */}
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        padding: '52px 16px 12px', flexShrink: 0,
+      }}>
+        <button onClick={onBack} style={{
+          width: 36, height: 36, border: 0, background: 'transparent',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+            <path d="M8.5 1L1.5 8L8.5 15" stroke={C.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div style={{ fontSize: 17, fontWeight: 600, marginLeft: 8 }}>我的作品</div>
+      </div>
+
+      {/* 作品列表 */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 32px' }}>
+        {MOCK_WORKS.map((work) => (
+          <div key={work.id} style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '14px 0', borderBottom: `0.5px solid ${C.line}`,
+          }}>
+            {/* 缩略图 */}
+            <div style={{
+              width: 72, height: 72, flexShrink: 0,
+              border: '1px solid #8b7355', borderRadius: 4, overflow: 'hidden',
+              boxShadow: 'inset 0 0 0 2px #fff, inset 0 0 0 2.5px rgba(139,115,85,0.2)',
+              background: '#fffaf6',
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, padding: 1, height: '100%' }}>
+                {work.photos.slice(0, 9).map((pi, i) => (
+                  <div key={i} style={{ overflow: 'hidden', background: '#ddd6cf' }}>
+                    <img src={PREVIEW_PHOTOS[pi % PREVIEW_PHOTOS.length]} alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* 信息 */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, fontFamily: FONT_SERIF }}>{work.name}</div>
+              <div style={{ fontSize: 11, color: C.mute, marginTop: 4 }}>{work.date}</div>
+            </div>
+            {/* 立即印制 */}
+            <button style={{
+              flexShrink: 0, height: 32, padding: '0 14px', borderRadius: 16,
+              border: 0, background: C.pink, color: '#fff',
+              fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}>立即印制</button>
+          </div>
+        ))}
+        {MOCK_WORKS.length === 0 && (
+          <div style={{ textAlign: 'center', marginTop: 80, color: C.mute, fontSize: 14 }}>
+            暂无作品，快去做一张吧 ✨
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1526,7 +1638,9 @@ export default function App() {
     }}>
       <IOSDevice width={402} height={874}>
         {screen === 'home' && (
-          <PuzzlePage onGenerate={() => setScreen('layout')} />
+          <PuzzlePage
+            onGenerate={() => setScreen('layout')}
+            onWorks={() => setScreen('works')} />
         )}
         {screen === 'layout' && (
           <LayoutPickerPage
@@ -1536,7 +1650,10 @@ export default function App() {
         {screen === 'done' && (
           <CompletionPage
             onClose={() => setScreen('home')}
-            onPrint={() => {}} />
+            onWorks={() => setScreen('works')} />
+        )}
+        {screen === 'works' && (
+          <WorksPage onBack={() => setScreen('home')} />
         )}
       </IOSDevice>
     </div>
