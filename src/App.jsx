@@ -184,7 +184,7 @@ function HeroPreview({ idx, setIdx, onGenerate }) {
   );
 }
 
-// ── 版式选择器图示（支持文案版 -c 后缀）────────────────────
+// ── 模板选择器图示（支持文案版 -c 后缀）────────────────────
 function LayoutGlyph({ kind, active }) {
   const hasCaption = kind.endsWith('-c');
   const baseKind = kind.replace(/-c$/, '');
@@ -447,7 +447,7 @@ function EditorPage({ onBack, onDone }) {
   );
 }
 
-// ── 版式实景预览（用真实照片渲染选中布局）───────────────────
+// ── 模板实景预览（用真实照片渲染选中布局）───────────────────
 const PREVIEW_PHOTOS = [
   'assets/p1.jpg','assets/p2.jpg','assets/p3.jpg',
   'assets/p4.jpg','assets/p5.jpg','assets/p6.jpg','assets/p7.jpg',
@@ -676,7 +676,7 @@ function LayoutPreview({ layoutId, captionTexts = [], photos: userPhotos = [], o
   }
 }
 
-// ── 版式选择页 ────────────────────────────────────────────────
+// ── 模板选择页 ────────────────────────────────────────────────
 function LayoutPickerPage({ onBack, onConfirm }) {
   const [tab, setTab] = useState('孕期时光');
   const [activeId, setActiveId] = useState('3x3');
@@ -703,7 +703,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
     // ── 满月百日 ──
     { id: '2x2',     theme: '满月百日', hot: true, name: '经典四宫格', cells: 4, ratio: '1:1' },
     { id: '2x2-c',   theme: '满月百日', hot: true, name: '四格·文案',  cells: 4, ratio: '1:1' },
-    { id: 'mix1',    theme: '满月百日',            name: '混合版式',   cells: 4, ratio: '4:3' },
+    { id: 'mix1',    theme: '满月百日',            name: '混合模板',   cells: 4, ratio: '4:3' },
     { id: 'mix1-c',  theme: '满月百日',            name: '混合·文案',  cells: 4, ratio: '4:3' },
     { id: 'cols3',   theme: '满月百日',            name: '竖向三栏',   cells: 3, ratio: '2:3' },
     { id: 'cols3-c', theme: '满月百日',            name: '三栏·文案',  cells: 3, ratio: '2:3' },
@@ -781,7 +781,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
     }));
   };
 
-  // 切换版式时重置 viewMode
+  // 切换模板时重置 viewMode
   const handleLayoutSelect = (id) => {
     setActiveId(id);
     setViewMode('layout');
@@ -835,7 +835,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
         </button>
 
         <div style={{ fontSize: 16, fontWeight: 600 }}>
-          {isEdit ? '替换照片' : '选择版式'}
+          {isEdit ? '替换照片' : '选择模板'}
         </div>
 
         {/* 右：占位保持对称 */}
@@ -850,7 +850,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 0 8px',
         }}>
-          {/* 版式卡片 — 精致边框，点击整体进入编辑 */}
+          {/* 模板卡片 — 精致边框，点击整体进入编辑 */}
           <div
             key={current.id}
             onClick={() => setViewMode('edit')}
@@ -881,7 +881,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
         </div>
       )}
 
-      {/* ══ EDIT 模式：保持版式形状 + 精致边框 + 宝宝信息 ══ */}
+      {/* ══ EDIT 模式：保持模板形状 + 精致边框 + 宝宝信息 ══ */}
       {isEdit && (
         <div
           style={{
@@ -1274,7 +1274,7 @@ function PuzzlePage({ onGenerate, onWorks }) {
                       <rect x="9" y="9" width="5" height="5" rx="0.8" stroke={C.pink} strokeWidth="1.4"/>
                     </svg>
                   ),
-                  k: '10+ 版式', v: '一键换风格',
+                  k: '10+ 模板', v: '一键换风格',
                 },
               ].map((r, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
