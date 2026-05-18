@@ -314,7 +314,7 @@ function EditorPage({ onBack, onDone }) {
           <button onClick={onDone} style={{
             padding: '8px 14px', borderRadius: 999, border: 0,
             background: C.pink, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}>生成海报</button>
+          }}>生成纪念卡</button>
         </div>
 
         {/* 模板标题块 */}
@@ -1028,7 +1028,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
             boxShadow: '0 8px 18px -6px rgba(255,91,138,0.55)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
-          {isEdit ? '完成，生成海报' : '下一步'}
+          {isEdit ? '完成，生成纪念卡' : '下一步'}
         </button>
       </div>
 
@@ -1343,7 +1343,7 @@ function PuzzlePage({ onGenerate }) {
   );
 }
 
-// ── 完成页（海报已保存）────────────────────────────────────────
+// ── 完成页（纪念卡已保存）────────────────────────────────────────
 // 撒花动效 CSS（注入一次）
 const CONFETTI_STYLE = `
 @keyframes confettiFall {
@@ -1431,13 +1431,13 @@ function CompletionPage({ onClose, onPrint }) {
         <div style={{
           fontFamily: FONT_SERIF, fontSize: 30, fontWeight: 700,
           color: C.ink, letterSpacing: 1,
-        }}>海报已保存</div>
+        }}>纪念卡已保存</div>
         <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>
           已自动保存至时间轴
         </div>
       </div>
 
-      {/* 海报预览（放大 + 精致边框 + 美柚水印）*/}
+      {/* 纪念卡预览（放大 + 精致边框 + 美柚水印）*/}
       <div style={{
         marginTop: 20, width: 290, position: 'relative', zIndex: 10,
         border: '1.5px solid #8b7355',
