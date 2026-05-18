@@ -481,13 +481,50 @@ const ALBUM_GROUPS = (() => {
   });
 })();
 
-function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
+/** mode: single = 替换某一格；batch = 先多选照片再填入模板（按顺序占格） */
+function AlbumPhotoPickerOverlay({
+  mode = 'single',
+  maxSlots = 9,
+  initialSrc,
+  onClose,
+  onApply,
+  onBatchApply,
+}) {
   const fileRef = React.useRef(null);
-  const [selectedSrc, setSelectedSrc] = useState(initialSrc || null);
+  const isBatch = mode === 'batch';
+  const [selectedSrc, setSelectedSrc] = useState(isBatch ? null : (initialSrc || null));
+  /** batch：按点选顺序 [{ id, src }] */
+  const [batchOrder, setBatchOrder] = useState([]);
+
+  const batchCount = batchOrder.length;
+  const batchOk = isBatch && batchCount >= 1;
+
+  const toggleBatch = (id, src) => {
+    setBatchOrder((prev) => {
+      const i = prev.findIndex((x) => x.id === id);
+      if (i >= 0) {
+        const next = [...prev];
+        next.splice(i, 1);
+        return next;
+      }
+      return [...prev, { id, src }];
+    });
+  };
+
+  const isBatchSelected = (id) => batchOrder.some((x) => x.id === id);
 
   const selectAllInDate = (date) => {
     const g = ALBUM_GROUPS.find((x) => x.date === date);
     if (!g) return;
+    if (isBatch) {
+      const photos = g.items.filter((it) => it.kind === 'photo');
+      setBatchOrder((prev) => {
+        const ids = new Set(prev.map((x) => x.id));
+        const add = photos.filter((p) => !ids.has(p.id));
+        return [...prev, ...add.map((p) => ({ id: p.id, src: p.src }))];
+      });
+      return;
+    }
     const first = g.items.find((it) => it.kind === 'photo');
     if (first?.src) setSelectedSrc(first.src);
   };
@@ -518,21 +555,25 @@ function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
             background: 'transparent', color: text, cursor: 'pointer',
             fontSize: 20, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
-          aria-label="关闭"
+          aria-label={isBatch ? '返回' : '关闭'}
         >
           ✕
         </button>
-        <button
-          type="button"
-          style={{
-            border: 'none', background: 'transparent', color: text,
-            fontSize: 16, fontWeight: 500, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}
-        >
-          最近项目
-          <span style={{ fontSize: 10, opacity: 0.8 }}>▼</span>
-        </button>
+        {isBatch ? (
+          <div style={{ fontSize: 16, fontWeight: 500 }}>选择照片</div>
+        ) : (
+          <button
+            type="button"
+            style={{
+              border: 'none', background: 'transparent', color: text,
+              fontSize: 16, fontWeight: 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >
+            最近项目
+            <span style={{ fontSize: 10, opacity: 0.8 }}>▼</span>
+          </button>
+        )}
         <div style={{ width: 36 }} />
       </div>
 
@@ -589,12 +630,12 @@ function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
                     </button>
                   );
                 }
-                const sel = selectedSrc === it.src;
+                const sel = isBatch ? isBatchSelected(it.id) : selectedSrc === it.src;
                 return (
                   <button
                     key={it.id}
                     type="button"
-                    onClick={() => setSelectedSrc(it.src)}
+                    onClick={() => (isBatch ? toggleBatch(it.id, it.src) : setSelectedSrc(it.src))}
                     style={{
                       aspectRatio: '1', padding: 0, margin: 0, border: 'none',
                       borderRadius: 2, overflow: 'hidden', position: 'relative',
@@ -620,10 +661,13 @@ function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
                       border: sel ? 'none' : '1.5px solid rgba(255,255,255,0.92)',
                       background: sel ? pink : 'rgba(0,0,0,0.25)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, color: '#fff', fontWeight: 500,
+                      fontSize: isBatch && sel ? 9 : 10,
+                      color: '#fff', fontWeight: 500,
                       boxSizing: 'border-box',
                     }}>
-                      {sel ? '✓' : ''}
+                      {isBatch && sel
+                        ? batchOrder.findIndex((x) => x.id === it.id) + 1
+                        : (sel ? '✓' : '')}
                     </div>
                   </button>
                 );
@@ -640,9 +684,13 @@ function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
         style={{ display: 'none' }}
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) {
-            const url = URL.createObjectURL(f);
-            onApply(url);
+          if (!f) return;
+          const url = URL.createObjectURL(f);
+          if (isBatch) {
+            const id = `upload-${Date.now()}`;
+            setBatchOrder((prev) => [...prev, { id, src: url }]);
+          } else {
+            onApply?.(url);
           }
           e.target.value = '';
         }}
@@ -656,7 +704,12 @@ function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
         borderTop: '0.5px solid rgba(255,255,255,0.1)',
         background: '#0a0a0a',
       }}>
-        <span style={{ fontSize: 14, color: selectedSrc ? text : textSub }}>预览</span>
+        <span style={{
+          fontSize: 13,
+          color: isBatch ? textSub : (selectedSrc ? text : textSub),
+        }}>
+          预览
+        </span>
         <button
           type="button"
           style={{
@@ -670,16 +723,23 @@ function AlbumPhotoPickerOverlay({ initialSrc, onClose, onApply }) {
         </button>
         <button
           type="button"
-          disabled={!selectedSrc}
-          onClick={() => selectedSrc && onApply(selectedSrc)}
+          disabled={isBatch ? !batchOk : !selectedSrc}
+          onClick={() => {
+            if (isBatch) {
+              const ordered = batchOrder.map((x) => x.src).slice(0, maxSlots);
+              onBatchApply?.(ordered);
+            } else if (selectedSrc) {
+              onApply?.(selectedSrc);
+            }
+          }}
           style={{
             minWidth: 80, height: 36, padding: '0 18px', borderRadius: 8, border: 'none',
-            background: selectedSrc ? pink : 'rgba(255,255,255,0.18)',
-            color: selectedSrc ? '#fff' : textSub,
-            fontSize: 15, fontWeight: 500, cursor: selectedSrc ? 'pointer' : 'default',
+            background: (isBatch ? batchOk : !!selectedSrc) ? pink : 'rgba(255,255,255,0.18)',
+            color: (isBatch ? batchOk : !!selectedSrc) ? '#fff' : textSub,
+            fontSize: 15, fontWeight: 500, cursor: (isBatch ? batchOk : !!selectedSrc) ? 'pointer' : 'default',
           }}
         >
-          完成
+          {isBatch ? `完成(${batchCount})` : '完成'}
         </button>
       </div>
 
@@ -980,16 +1040,24 @@ function LayoutPickerPage({ onBack, onConfirm }) {
     || filtered[0]
     || layouts[0];
 
+  const [favorites, setFavorites] = useState(new Set());
+  const [cellPhotos, setCellPhotos] = useState({});
+  /** layout：选模板；album：全屏多选照片；edit：替换照片 / 补格 */
+  const [viewMode, setViewMode] = useState('layout');
+  const [pickerCell, setPickerCell] = useState(null); // null | idx — 单格替换
+
+  const openAlbumPicker = () => {
+    setPickerCell(null);
+    setViewMode('album');
+  };
+
   const handleTabChange = (t) => {
     setTab(t);
     const first = layouts.find((l) => l.theme === t);
     if (first) setActiveId(first.id);
+    setViewMode('layout');
+    setCellPhotos({});
   };
-
-  const [favorites, setFavorites] = useState(new Set());
-  const [cellPhotos, setCellPhotos] = useState({});
-  const [viewMode, setViewMode] = useState('layout'); // 'layout' | 'edit'
-  const [pickerCell, setPickerCell] = useState(null); // null | idx — 换一张 sheet
 
   const favKey = (l) => `${l.theme}::${l.id}`;
   const isFav = favorites.has(favKey(current));
@@ -1035,10 +1103,11 @@ function LayoutPickerPage({ onBack, onConfirm }) {
     }));
   };
 
-  // 切换模板时重置 viewMode
+  // 切换模板 / tab：回到选模板并清空已选照片
   const handleLayoutSelect = (id) => {
     setActiveId(id);
     setViewMode('layout');
+    setCellPhotos({});
   };
 
   const previewPhotos = Array.from({ length: 9 }, (_, i) => cellPhotos[i] ?? null);
@@ -1053,6 +1122,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
   const dim = dimMap[current.ratio] || { w: 240, h: 240 };
 
   const isEdit = viewMode === 'edit';
+  const isAlbum = viewMode === 'album';
   const gridCols = current.cells === 4 ? 2 : 3;
   const captions = THEME_CAPTIONS[tab] || [];
   const hasCaption = current.id.endsWith('-c');
@@ -1107,7 +1177,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
           {/* 模板卡片 — 精致边框，点击整体进入编辑 */}
           <div
             key={current.id}
-            onClick={() => setViewMode('edit')}
+            onClick={openAlbumPicker}
             style={{
               width: dim.w, height: dim.h, borderRadius: 4, overflow: 'hidden',
               border: '1.5px solid #8b7355',
@@ -1122,14 +1192,14 @@ function LayoutPickerPage({ onBack, onConfirm }) {
               layoutId={current.id}
               captionTexts={captions}
               photos={previewPhotos}
-              onCellTap={() => setViewMode('edit')}
+              onCellTap={openAlbumPicker}
             />
           </div>
 
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{tab}</div>
             <div style={{ fontSize: 11, color: C.mute, marginTop: 2 }}>
-              {current.cells} 张照片 · 点击格子或下一步填入
+              共 {current.cells} 格
             </div>
           </div>
         </div>
@@ -1273,7 +1343,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
       {/* ── 底部 CTA ── */}
       <div style={{ padding: '8px 16px 22px', flexShrink: 0, background: isEdit ? '#fff8f4' : C.paper }}>
         <button
-          onClick={isEdit ? handleConfirm : () => setViewMode('edit')}
+          onClick={isEdit ? handleConfirm : openAlbumPicker}
           style={{
             width: '100%', height: 50, borderRadius: 26, border: 0,
             background: `linear-gradient(135deg, #ff6e9c 0%, ${C.pink} 100%)`,
@@ -1286,10 +1356,29 @@ function LayoutPickerPage({ onBack, onConfirm }) {
         </button>
       </div>
 
-      {/* ── 全屏相册：替换照片（非浮层，便于大量选图）── */}
+      {/* ── 全屏相册：先多选照片，再进入替换照片页 ── */}
+      {isAlbum && (
+        <AlbumPhotoPickerOverlay
+          key={[`batch`, current.theme, current.id, current.cells].join('-')}
+          mode="batch"
+          maxSlots={current.cells}
+          onClose={() => setViewMode('layout')}
+          onBatchApply={(ordered) => {
+            const next = {};
+            ordered.forEach((src, i) => {
+              if (i < current.cells) next[i] = src;
+            });
+            setCellPhotos(next);
+            setViewMode('edit');
+          }}
+        />
+      )}
+
+      {/* ── 全屏相册：替换某一格 ── */}
       {pickerCell !== null && (
         <AlbumPhotoPickerOverlay
           key={pickerCell}
+          mode="single"
           initialSrc={
             cellPhotos[pickerCell] ?? PREVIEW_PHOTOS[pickerCell % PREVIEW_PHOTOS.length]
           }
