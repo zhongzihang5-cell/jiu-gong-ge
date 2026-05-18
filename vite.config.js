@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/jiu-gong-ge/',  // ← 加这一行
-  plugins: [react()],
   base: '/jiu-gong-ge/',
+  plugins: [react()],
 })
