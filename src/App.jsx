@@ -3,7 +3,7 @@ import { IOSDevice } from './IOSFrame';
 
 // ── 样本数据 ──────────────────────────────────────────────────
 const SAMPLES = [
-  { kind: 'demo', tag: '豆豆的纪念拼图' },
+  { kind: 'demo', tag: '豆豆的成长纪念卡' },
   { src: 'assets/sample1.png', tag: '满月日记', author: 'SillyLolo', likes: '2.3k' },
   { src: 'assets/sample2.png', tag: '宝宝 30 天', author: '穗の豆', likes: '942' },
   { src: 'assets/sample3.png', tag: '出生第一周', author: 'Jugwss', likes: '1.5k' },
@@ -1173,7 +1173,7 @@ function PuzzlePage({ onGenerate }) {
               <span style={{
                 fontVariantNumeric: 'tabular-nums', color: C.pink, fontWeight: 600,
               }}>{counter.toLocaleString()}</span>
-              位妈妈已经为宝宝生成了孕育纪念拼图
+              位妈妈已经为宝宝生成了成长纪念卡
             </span>
           </div>
 
@@ -1227,7 +1227,7 @@ function PuzzlePage({ onGenerate }) {
             <div style={{
               fontFamily: FONT_SERIF, fontSize: 17, fontWeight: 700, color: C.ink,
               letterSpacing: 0.5,
-            }}>豆豆的专属海报已经准备好了</div>
+            }}>豆豆的专属成长纪念卡已经准备好了</div>
             <div style={{ fontSize: 12, color: C.ink2, marginTop: 4 }}>
               一份有意义的礼物，送给宝宝也送给自己
             </div>
@@ -1318,7 +1318,7 @@ function PuzzlePage({ onGenerate }) {
             <path d="M8.5 1L1.5 8L8.5 15" stroke={C.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <div style={{ fontSize: 16, fontWeight: 600, color: C.ink }}>纪念拼图</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: C.ink }}>成长纪念卡</div>
         <div style={{ width: 36, height: 36 }} />
       </div>
 
@@ -1344,75 +1344,111 @@ function PuzzlePage({ onGenerate }) {
 }
 
 // ── 完成页（海报已保存）────────────────────────────────────────
+// 撒花动效 CSS（注入一次）
+const CONFETTI_STYLE = `
+@keyframes confettiFall {
+  0%   { transform: translateY(-30px) rotate(0deg) scaleX(1);   opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translateY(920px) rotate(600deg) scaleX(-1); opacity: 0; }
+}
+@keyframes confettiSway {
+  0%,100% { margin-left: 0px; }
+  33%     { margin-left: 12px; }
+  66%     { margin-left: -10px; }
+}`;
+
 function CompletionPage({ onClose, onPrint }) {
-  // 简单彩带粒子
-  const confetti = [
-    { x: '12%', y: '8%',  w: 8,  h: 18, r: -25, bg: '#ffb3c8' },
-    { x: '25%', y: '5%',  w: 6,  h: 14, r:  15, bg: '#ffd27a' },
-    { x: '40%', y: '12%', w: 10, h: 8,  r: -10, bg: '#a8d8ea' },
-    { x: '60%', y: '6%',  w: 7,  h: 16, r:  30, bg: '#c9b8ff' },
-    { x: '75%', y: '10%', w: 9,  h: 9,  r: -20, bg: '#ff5b8a' },
-    { x: '88%', y: '7%',  w: 6,  h: 15, r:  10, bg: '#ffd27a' },
-    { x: '5%',  y: '22%', w: 8,  h: 8,  r:  40, bg: '#a8d8ea' },
-    { x: '92%', y: '20%', w: 7,  h: 14, r: -35, bg: '#ffb3c8' },
-  ];
+  // 注入动画样式
+  React.useEffect(() => {
+    const id = 'confetti-keyframes';
+    if (!document.getElementById(id)) {
+      const el = document.createElement('style');
+      el.id = id; el.textContent = CONFETTI_STYLE;
+      document.head.appendChild(el);
+    }
+  }, []);
+
+  // 30 个撒花粒子
+  const pieces = React.useMemo(() => {
+    const colors = ['#ff5b8a','#ffd27a','#a8d8ea','#c9b8ff','#ffb3c8','#7ed8b4','#ff9e6e','#b8d4ff'];
+    return Array.from({ length: 30 }, (_, i) => ({
+      left:    `${(i * 37 + 3) % 100}%`,
+      w:       [6, 8, 10, 5, 9][i % 5],
+      h:       [14, 8, 18, 10, 6][i % 5],
+      bg:      colors[i % colors.length],
+      dur:     `${3.2 + (i % 7) * 0.5}s`,
+      delay:   `${(i % 9) * 0.25}s`,
+      sway:    `${1.8 + (i % 4) * 0.6}s`,
+      radius:  i % 3 === 0 ? '50%' : '2px',
+    }));
+  }, []);
 
   const SHARE_APPS = [
-    { name: '微信好友',  bg: '#07C160', icon: '💬' },
-    { name: '朋友圈',    bg: '#FA8919', icon: '⊙' },
-    { name: '抖音',     bg: '#000',    icon: '♪' },
-    { name: '小红书',   bg: '#FE2C55', icon: '✦' },
+    { name: '微信好友', bg: '#07C160', icon: '💬' },
+    { name: '朋友圈',  bg: '#FA8919', icon: '⊙' },
+    { name: '抖音',    bg: '#000',    icon: '♪' },
+    { name: '小红书',  bg: '#FE2C55', icon: '✦' },
   ];
 
   return (
     <div style={{
-      width: '100%', height: '100%', overflow: 'hidden', position: 'relative',
+      width: '100%', height: '100%', position: 'relative',
+      overflow: 'hidden',                         /* 裁切撒花，不超出手机边框 */
       background: 'linear-gradient(180deg, #fff5f8 0%, #fffaf6 55%, #fff 100%)',
       fontFamily: FONT_SANS, color: C.ink,
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
-      {/* 彩带 */}
-      {confetti.map((c, i) => (
+
+      {/* ── 撒花动效（absolute，被外层裁切）── */}
+      {pieces.map((p, i) => (
         <div key={i} style={{
-          position: 'absolute', left: c.x, top: c.y,
-          width: c.w, height: c.h, borderRadius: 2,
-          background: c.bg, opacity: 0.75,
-          transform: `rotate(${c.r}deg)`,
+          position: 'absolute', left: p.left, top: 0,
+          width: p.w, height: p.h, borderRadius: p.radius,
+          background: p.bg, opacity: 0.82,
+          animation:
+            `confettiFall ${p.dur} ${p.delay} ease-in infinite,` +
+            `confettiSway ${p.sway} ${p.delay} ease-in-out infinite`,
+          pointerEvents: 'none', zIndex: 50,
         }} />
       ))}
 
+      {/* ── 可滚动内容区 ── */}
+      <div style={{
+        position: 'absolute', inset: 0, overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        paddingBottom: 32,
+      }}>
+
       {/* 关闭按钮 */}
       <button onClick={onClose} style={{
-        position: 'absolute', top: 52, left: 18,
+        position: 'absolute', top: 52, left: 18, zIndex: 60,
         width: 32, height: 32, border: 0, background: 'transparent',
         cursor: 'pointer', fontSize: 20, color: C.ink2,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>✕</button>
 
       {/* 标题 */}
-      <div style={{ marginTop: 72, textAlign: 'center' }}>
+      <div style={{ marginTop: 68, textAlign: 'center', position: 'relative', zIndex: 10 }}>
         <div style={{
-          fontFamily: FONT_SERIF, fontSize: 28, fontWeight: 700,
+          fontFamily: FONT_SERIF, fontSize: 30, fontWeight: 700,
           color: C.ink, letterSpacing: 1,
         }}>海报已保存</div>
         <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>
-          已自动保存至手机相册
+          已自动保存至时间轴
         </div>
       </div>
 
-      {/* 海报预览（精致边框 + 美柚水印）*/}
+      {/* 海报预览（放大 + 精致边框 + 美柚水印）*/}
       <div style={{
-        marginTop: 22, width: 220,
+        marginTop: 20, width: 290, position: 'relative', zIndex: 10,
         border: '1.5px solid #8b7355',
         borderRadius: 4,
         boxShadow:
-          'inset 0 0 0 4px #fff,' +
-          'inset 0 0 0 5px rgba(139,115,85,0.18),' +
-          '0 12px 32px rgba(80,30,40,0.18)',
+          'inset 0 0 0 5px #fff,' +
+          'inset 0 0 0 6px rgba(139,115,85,0.20),' +
+          '0 16px 40px rgba(80,30,40,0.22)',
         background: '#fffaf6',
         overflow: 'hidden',
       }}>
-        {/* 3×3 示例网格 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2, padding: 2 }}>
           {PREVIEW_PHOTOS.slice(0, 9).map((src, i) => (
             <div key={i} style={{ aspectRatio: '1', overflow: 'hidden', background: '#ddd6cf' }}>
@@ -1420,27 +1456,25 @@ function CompletionPage({ onClose, onPrint }) {
             </div>
           ))}
         </div>
-        {/* 宝宝信息 + 美柚水印 */}
         <div style={{
-          padding: '8px 12px 10px', textAlign: 'center',
+          padding: '10px 14px 12px', textAlign: 'center',
           borderTop: '0.5px solid rgba(139,115,85,0.18)',
           position: 'relative',
         }}>
-          <div style={{ fontFamily: FONT_SERIF, fontSize: 13, fontWeight: 700, letterSpacing: 4, color: '#2a1f0a' }}>豆 豆</div>
-          <div style={{ fontSize: 7.5, color: '#8b7355', marginTop: 3, letterSpacing: 0.4 }}>
-            BIRTHDAY · 2026.06.28 · WEIGHT · 3200G
+          <div style={{ fontFamily: FONT_SERIF, fontSize: 15, fontWeight: 700, letterSpacing: 5, color: '#2a1f0a' }}>豆 豆</div>
+          <div style={{ fontSize: 8.5, color: '#8b7355', marginTop: 4, letterSpacing: 0.5 }}>
+            BIRTHDAY · 2026.06.28 · WEIGHT · 3200G · HEIGHT · 50CM
           </div>
-          {/* 美柚水印 */}
           <div style={{
-            position: 'absolute', bottom: 5, right: 8,
-            fontSize: 7, color: C.pink, opacity: 0.6,
+            position: 'absolute', bottom: 6, right: 10,
+            fontSize: 8, color: C.pink, opacity: 0.65,
             fontWeight: 600, letterSpacing: 0.5,
           }}>美柚</div>
         </div>
       </div>
 
-      {/* 立即印制按钮 */}
-      <div style={{ marginTop: 22, width: '100%', padding: '0 24px' }}>
+      {/* 立即印制 */}
+      <div style={{ marginTop: 20, width: '100%', padding: '0 24px', position: 'relative', zIndex: 10 }}>
         <button onClick={onPrint} style={{
           width: '100%', height: 48, borderRadius: 26, border: 0,
           background: `linear-gradient(135deg, #ff6e9c 0%, ${C.pink} 100%)`,
@@ -1451,7 +1485,7 @@ function CompletionPage({ onClose, onPrint }) {
       </div>
 
       {/* 分享到 */}
-      <div style={{ marginTop: 24, textAlign: 'center', width: '100%' }}>
+      <div style={{ marginTop: 20, textAlign: 'center', width: '100%', position: 'relative', zIndex: 10 }}>
         <div style={{
           fontSize: 12, color: C.mute, marginBottom: 14,
           display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center',
@@ -1464,8 +1498,7 @@ function CompletionPage({ onClose, onPrint }) {
           {SHARE_APPS.map((app) => (
             <div key={app.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
               <div style={{
-                width: 52, height: 52, borderRadius: 26,
-                background: app.bg,
+                width: 52, height: 52, borderRadius: 26, background: app.bg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 22, color: '#fff',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
@@ -1475,6 +1508,8 @@ function CompletionPage({ onClose, onPrint }) {
           ))}
         </div>
       </div>
+
+      </div>  {/* end 可滚动内容区 */}
     </div>
   );
 }
