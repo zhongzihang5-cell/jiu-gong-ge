@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { IOSDevice } from './IOSFrame';
+import { MeiyouHomePage } from './MeiyouHomePage';
+import { MeiyouBabyProfilePage } from './MeiyouBabyProfilePage';
+import { ScatterGridPolaroid } from './ScatterGridPolaroid';
 
 // ── 样本数据 ──────────────────────────────────────────────────
 const SAMPLES = [
@@ -28,87 +31,10 @@ const C = {
 const FONT_SANS = `-apple-system, "PingFang SC", "Noto Sans SC", system-ui, sans-serif`;
 const FONT_SERIF = `"Noto Serif SC", "Songti SC", "STSong", serif`;
 
-// ── Demo 拼图动画：散落 → 整齐九宫格 ────────────────────────
-const DEMO_CELL_W = 50;
-const DEMO_CELL_H = 72;
-const DEMO_GAP = 4;
-
-const DEMO_PHOTOS = [
-  { src: 'assets/p1.jpg', chaos: { x:  -8, y:  10, r: -22 } },
-  { src: 'assets/p2.jpg', chaos: { x:  44, y:  -4, r:  14 } },
-  { src: 'assets/p3.jpg', chaos: { x: 100, y:  22, r:  -8 } },
-  { src: 'assets/p4.jpg', chaos: { x:  -4, y:  86, r:  18 } },
-  { src: 'assets/p5.jpg', chaos: { x:  60, y:  72, r: -12 } },
-  { src: 'assets/p6.jpg', chaos: { x: 108, y: 100, r:  11 } },
-  { src: 'assets/p7.jpg', chaos: { x:   6, y: 168, r: -18 } },
-  { src: 'assets/p2.jpg', chaos: { x:  66, y: 156, r:   8 } },
-  { src: 'assets/p3.jpg', chaos: { x: 112, y: 176, r: -10 } },
-];
-
-function DemoPolaroid({ active }) {
-  const [placed, setPlaced] = useState(false);
-
-  useEffect(() => {
-    if (!active) { setPlaced(false); return; }
-    const t = setTimeout(() => setPlaced(true), 1100);
-    return () => clearTimeout(t);
-  }, [active]);
-
-  return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* 半透明 3x3 模板格 */}
-      <div style={{
-        position: 'absolute', inset: 0, padding: 4,
-        display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gridTemplateRows: 'repeat(3,1fr)',
-        gap: DEMO_GAP, boxSizing: 'border-box', pointerEvents: 'none',
-        opacity: placed ? 0 : 1, transition: 'opacity 0.5s',
-      }}>
-        {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} style={{
-            border: `1px dashed ${C.pinkSoft}`,
-            background: '#fff8fa',
-            borderRadius: 3,
-          }} />
-        ))}
-      </div>
-
-      {DEMO_PHOTOS.map((p, i) => {
-        const col = i % 3;
-        const row = Math.floor(i / 3);
-        const orderX = 4 + col * (DEMO_CELL_W + DEMO_GAP);
-        const orderY = 4 + row * (DEMO_CELL_H + DEMO_GAP);
-        const x = placed ? orderX : p.chaos.x;
-        const y = placed ? orderY : p.chaos.y;
-        const r = placed ? 0 : p.chaos.r;
-        const delay = placed ? i * 70 : 0;
-        return (
-          <div key={i} style={{
-            position: 'absolute', top: 0, left: 0,
-            width: DEMO_CELL_W, height: DEMO_CELL_H,
-            transform: `translate(${x}px, ${y}px) rotate(${r}deg)`,
-            transition: `transform 0.75s cubic-bezier(.55,.0,.3,1.15) ${delay}ms, box-shadow 0.5s ${delay}ms, border-color 0.5s`,
-            borderRadius: 3,
-            border: placed ? `1px solid #fff` : `2px solid #fff`,
-            background: '#f3ebe4', overflow: 'hidden',
-            boxShadow: placed
-              ? '0 1px 2px rgba(80,30,40,0.10)'
-              : '0 8px 16px rgba(50,20,30,0.30), 0 2px 4px rgba(50,20,30,0.18)',
-            zIndex: placed ? 1 : (10 - i),
-            willChange: 'transform',
-          }}>
-            <img src={p.src} alt=""
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── 自动轮播 carousel ────────────────────────────────────────
 function HeroPreview({ idx, setIdx, onGenerate }) {
   useEffect(() => {
-    const dwell = SAMPLES[idx]?.kind === 'demo' ? 5600 : 3000;
+    const dwell = SAMPLES[idx]?.kind === 'demo' ? 6200 : 2200;
     const t = setTimeout(() => setIdx((i) => (i + 1) % SAMPLES.length), dwell);
     return () => clearTimeout(t);
   }, [idx, setIdx]);
@@ -149,7 +75,22 @@ function HeroPreview({ idx, setIdx, onGenerate }) {
               position: 'relative',
             }}>
               {s.kind === 'demo' ? (
-                <DemoPolaroid active={isCenter} />
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                >
+                  <ScatterGridPolaroid
+                    active={isCenter}
+                    scale={1}
+                    dashedBorderColor={C.pinkSoft}
+                    organizedHoldMs={5000}
+                  />
+                </div>
               ) : (
                 <img src={s.src} alt={s.tag}
                   style={{
@@ -454,11 +395,19 @@ const PREVIEW_PHOTOS = [
 ];
 
 const THEME_CAPTIONS = {
-  '孕期时光': ['孕5周','孕8周','孕12周','孕16周','孕20周','孕24周','孕28周','孕32周','孕36周'],
-  '新生初见': ['出生第1天','出生第3天','出生第7天','出生第14天','出生第21天','出生第30天'],
-  '满月百日': ['宝宝30天','宝宝60天','宝宝90天','宝宝100天','宝宝120天','宝宝150天'],
-  '宝宝成长': ['6个月','9个月','1岁','1岁3月','1岁6月','2岁'],
+  '孕期时光': ['孕5周', '孕8周', '孕12周', '孕16周', '孕20周', '孕24周', '孕28周', '孕32周', '孕36周'],
+  /** 新生儿 · 满月 · 成长期 合并文案池 */
+  '宝宝成长': [
+    '出生第1天', '出生第7天', '出生第14天', '满月', '宝宝60天',
+    '百日', '6个月', '9个月', '1岁', '1岁半', '2岁',
+  ],
 };
+
+/** 已保存的卡若仍为旧四类里的「新生初见 / 满月百日」，文案归入宝宝成长池 */
+function themeTabForCaptions(themeTab) {
+  if (themeTab === '新生初见' || themeTab === '满月百日') return '宝宝成长';
+  return themeTab;
+}
 
 /** 全屏相册（原型）：深色、按日期分组、便于从大量素材中选择 */
 const ALBUM_GROUPS = (() => {
@@ -774,31 +723,77 @@ function AlbumPhotoPickerOverlay({
   );
 }
 
-function LayoutPreview({ layoutId, captionTexts = [], photos: userPhotos = [], onCellTap, onPickPhoto, editable = false }) {
+/** 带「·文案」（-c）时每格多出底栏，在同比例外框内会压住照片——整体加高以保持照片可视高度 */
+function layoutCaptionFrameGrow(baseW, baseH, layoutId) {
+  if (!layoutId || !String(layoutId).endsWith('-c')) {
+    return { w: baseW, h: baseH };
+  }
+  const HK = 1.32;
+  return { w: baseW, h: Math.round(baseH * HK) };
+}
+
+function LayoutPreview({
+  layoutId, captionTexts = [], photos: userPhotos = [], onCellTap, onPickPhoto,
+  editable = false, readOnly = false,
+  /** 空格展示「轻量加号占位」且点击直接进入相册替换（不写示例图快捷填充） */
+  inviteAlbumOnEmpty = false,
+}) {
+  const interactive = editable && !readOnly;
   const hasCaption = layoutId.endsWith('-c');
   const baseId = layoutId.replace(/-c$/, '');
   const g = 3;
 
+  /** 三联/四联竖栏：在整列条状照片上加底栏文案（非九宫格那种格内正方形） */
+  const verticalColumnCaptionLayout = baseId === 'cols4' || baseId === 'cols3';
+
   const cell = (idx) => {
-    const text = hasCaption ? captionTexts[idx % Math.max(captionTexts.length, 1)] : null;
+    const captionLine = hasCaption
+      ? captionTexts[idx % Math.max(captionTexts.length, 1)]
+      : '';
     const userSrc = userPhotos[idx] ?? null;
     const demoSrc = PREVIEW_PHOTOS[idx % PREVIEW_PHOTOS.length];
     const src = editable ? userSrc : (userSrc ?? demoSrc);
     const filled = src !== null;
 
-    // ── 空格：点任意区域 = 用这张；「替换照片」打开选择器 ───────────
+    /** 已填 / 或「邀约留白格」—— 整块点进相册；否则空格点一下用示例图快捷填充 */
+    const tapEditablePhotoSlot = interactive
+      ? () => {
+          if (filled || inviteAlbumOnEmpty) onPickPhoto?.(idx);
+          else onCellTap?.(idx, demoSrc);
+        }
+      : undefined;
+
+    // ── 空格：点任意区域 = 快速用示例图 或 「+」进相册 ────────────────
     const emptyInner = () => (
       <>
-        <img src={demoSrc} alt="" style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
-          objectFit: 'cover', display: 'block', opacity: 0.32,
-        }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,248,244,0.60)' }} />
+        {inviteAlbumOnEmpty ? (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: '#faf8f5',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{
+              width: 32, height: 32, borderRadius: 16,
+              border: `1.5px dashed ${C.pink}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 22, color: C.pink, fontWeight: 400, lineHeight: 1,
+              fontFamily: FONT_SANS,
+            }} aria-hidden="true">＋</span>
+          </div>
+        ) : (
+          <>
+            <img src={demoSrc} alt="" style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover', display: 'block', opacity: 0.32,
+            }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,248,244,0.60)' }} />
+          </>
+        )}
         <div style={{
           position: 'absolute', inset: 2,
           border: `1px dashed ${C.pinkSoft}`, borderRadius: 3, pointerEvents: 'none',
         }} />
-        {/* 唯一按钮：替换照片 */}
+        {interactive && !inviteAlbumOnEmpty && (
         <button
           onClick={(e) => { e.stopPropagation(); onPickPhoto?.(idx); }}
           style={{
@@ -809,6 +804,7 @@ function LayoutPreview({ layoutId, captionTexts = [], photos: userPhotos = [], o
             fontSize: 8.5, color: C.ink2, cursor: 'pointer',
             boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
           }}>替换照片</button>
+        )}
       </>
     );
 
@@ -820,55 +816,109 @@ function LayoutPreview({ layoutId, captionTexts = [], photos: userPhotos = [], o
           width: '100%', height: '100%',
           objectFit: 'cover', display: 'block',
         }} />
-        {editable && (
+        {interactive && (
           <>
-            {/* 暗渐变让按钮可读 */}
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
-              height: 32, pointerEvents: 'none',
-              background: 'linear-gradient(to top, rgba(15,6,10,0.55) 0%, transparent 100%)',
-            }} />
-            {/* 唯一按钮：替换照片 */}
+            {!hasCaption && (
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                height: 32, pointerEvents: 'none',
+                background: 'linear-gradient(to top, rgba(15,6,10,0.55) 0%, transparent 100%)',
+              }} />
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); onPickPhoto?.(idx); }}
               style={{
                 position: 'absolute', bottom: 5, left: '50%', transform: 'translateX(-50%)',
                 padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap',
-                background: 'rgba(255,255,255,0.22)',
-                border: '0.5px solid rgba(255,255,255,0.50)',
-                fontSize: 8.5, color: '#fff', cursor: 'pointer',
+                background: hasCaption ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.22)',
+                border: hasCaption ? '0.5px solid rgba(0,0,0,0.10)' : '0.5px solid rgba(255,255,255,0.50)',
+                fontSize: 8.5, color: hasCaption ? C.ink2 : '#fff', cursor: 'pointer',
+                boxShadow: hasCaption ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}>替换照片</button>
           </>
         )}
       </>
     );
 
-    // ── editable + 有文案 → 照片上方，文案独立在下方 ──────────────
-    if (editable && text) {
+    // ── 「·文案」：竖栏三联/四联 = 满列照片条 + 底栏；其余 = 正方形图区 + 底栏 ──
+    if (hasCaption) {
+      const text = captionLine != null && String(captionLine).trim() !== ''
+        ? String(captionLine)
+        : '\u00a0';
       return (
-        <div key={idx} style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', overflow: 'hidden' }}>
-          {/* 照片区 */}
-          <div
-            onClick={() => filled ? onPickPhoto?.(idx) : onCellTap?.(idx, demoSrc)}
-            style={{
-              flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden',
-              background: filled ? '#000' : 'transparent',
-              cursor: onCellTap ? 'pointer' : 'default',
-            }}
-          >
-            {filled ? filledInner() : emptyInner()}
-          </div>
-          {/* 文案条 */}
+        <div
+          key={idx}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: 0,
+            minHeight: 0,
+            height: '100%',
+            overflow: 'hidden',
+            alignItems: 'stretch',
+          }}
+        >
+          {verticalColumnCaptionLayout ? (
+            /* cols3-c / cols4-c：与同底无文案竖栏一致，整块为图区，仅底部加文案条 */
+            <div
+              onClick={tapEditablePhotoSlot}
+              style={{
+                flex: 1,
+                minHeight: 0,
+                minWidth: 0,
+                width: '100%',
+                position: 'relative',
+                overflow: 'hidden',
+                background: filled ? '#000' : '#faf8f5',
+                cursor: interactive ? 'pointer' : 'default',
+              }}
+            >
+              {filled ? filledInner() : emptyInner()}
+            </div>
+          ) : (
+            /* 上：min(宽, 图区高) 的正方形，横向纵向都居中 */
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                minWidth: 0,
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div
+                onClick={tapEditablePhotoSlot}
+                style={{
+                  width: '100%',
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  aspectRatio: '1 / 1',
+                  margin: '0 auto',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  minWidth: 0,
+                  background: filled ? '#f5f5f5' : '#faf8f5',
+                  cursor: interactive ? 'pointer' : 'default',
+                  borderRadius: 2,
+                }}
+              >
+                {filled ? filledInner() : emptyInner()}
+              </div>
+            </div>
+          )}
           <div style={{
-            flexShrink: 0, height: 22,
+            flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: '#fffaf6', padding: '0 4px',
-            borderTop: '0.5px solid rgba(139,115,85,0.15)',
+            background: '#fffaf6', padding: '3px 4px',
+            borderTop: '0.5px solid rgba(139,115,85,0.18)',
           }}>
             <span style={{
               fontFamily: FONT_SERIF, fontStyle: 'italic', fontWeight: 700,
-              fontSize: 9, color: filled ? C.ink : '#d4a8b0',
-              lineHeight: 1, letterSpacing: 0.3,
+              fontSize: 10, color: filled ? C.ink : '#c4a09a',
+              lineHeight: 1.25, letterSpacing: 0.3,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>{text}</span>
           </div>
@@ -876,30 +926,18 @@ function LayoutPreview({ layoutId, captionTexts = [], photos: userPhotos = [], o
       );
     }
 
-    // ── 标准格子（非文案 或 预览模式）──────────────────────────────
+    // ── 标准格子（无 per-cell 文案条）──────────────────────────────
     return (
       <div
         key={idx}
-        onClick={filled
-          ? (editable ? () => onPickPhoto?.(idx) : undefined)
-          : (editable ? () => onCellTap?.(idx, demoSrc) : undefined)}
+        onClick={tapEditablePhotoSlot}
         style={{
           overflow: 'hidden', background: filled ? '#000' : '#e8ddd5',
           minWidth: 0, minHeight: 0, position: 'relative',
-          cursor: onCellTap ? 'pointer' : 'default',
+          cursor: interactive ? 'pointer' : 'default',
         }}
       >
         {filled ? filledInner() : (editable ? emptyInner() : null)}
-        {/* 预览模式文案 overlay */}
-        {text && !editable && (
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            padding: '10px 4px 4px',
-            background: 'linear-gradient(to top, rgba(20,8,12,0.65) 0%, transparent 100%)',
-            color: '#fff', fontSize: 9, fontFamily: FONT_SERIF,
-            textAlign: 'center', letterSpacing: 0.5, lineHeight: 1.2, pointerEvents: 'none',
-          }}>{text}</div>
-        )}
       </div>
     );
   };
@@ -991,7 +1029,7 @@ function LayoutPreview({ layoutId, captionTexts = [], photos: userPhotos = [], o
 }
 
 // ── 模板选择页 ────────────────────────────────────────────────
-function LayoutPickerPage({ onBack, onConfirm }) {
+function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
   const [tab, setTab] = useState('孕期时光');
   const [activeId, setActiveId] = useState('3x3');
 
@@ -1005,27 +1043,21 @@ function LayoutPickerPage({ onBack, onConfirm }) {
     { id: 'rows3-c', theme: '孕期时光',            name: '三排·文案',  cells: 3, ratio: '3:4' },
     { id: '2x2-c',   theme: '孕期时光',            name: '四格·文案',  cells: 4, ratio: '1:1' },
     { id: 'big1-c',  theme: '孕期时光',            name: '主图·文案',  cells: 3, ratio: '4:3' },
-    // ── 新生初见 ──
-    { id: 'big1',    theme: '新生初见', hot: true, name: '主图突出',   cells: 3, ratio: '4:3' },
-    { id: 'big1-c',  theme: '新生初见', hot: true, name: '主图·文案',  cells: 3, ratio: '4:3' },
-    { id: 'split',   theme: '新生初见',            name: '左右切分',   cells: 3, ratio: '4:3' },
-    { id: 'split-c', theme: '新生初见',            name: '切分·文案',  cells: 3, ratio: '4:3' },
-    { id: 'v3',      theme: '新生初见',            name: '竖排三联',   cells: 3, ratio: '3:4' },
-    { id: 'v3-c',    theme: '新生初见',            name: '竖排·文案',  cells: 3, ratio: '3:4' },
-    { id: 'L',       theme: '新生初见',            name: 'L 型',       cells: 3, ratio: '1:1' },
-    { id: 'L-c',     theme: '新生初见',            name: 'L 型·文案',  cells: 3, ratio: '1:1' },
-    // ── 满月百日 ──
-    { id: '2x2',     theme: '满月百日', hot: true, name: '经典四宫格', cells: 4, ratio: '1:1' },
-    { id: '2x2-c',   theme: '满月百日', hot: true, name: '四格·文案',  cells: 4, ratio: '1:1' },
-    { id: 'mix1',    theme: '满月百日',            name: '混合模板',   cells: 4, ratio: '4:3' },
-    { id: 'mix1-c',  theme: '满月百日',            name: '混合·文案',  cells: 4, ratio: '4:3' },
-    { id: 'cols3',   theme: '满月百日',            name: '竖向三栏',   cells: 3, ratio: '2:3' },
-    { id: 'cols3-c', theme: '满月百日',            name: '三栏·文案',  cells: 3, ratio: '2:3' },
-    { id: 'L',       theme: '满月百日',            name: 'L 型',       cells: 3, ratio: '1:1' },
-    { id: 'L-c',     theme: '满月百日',            name: 'L 型·文案',  cells: 3, ratio: '1:1' },
-    // ── 宝宝成长 ──
-    { id: 'cols3',   theme: '宝宝成长', hot: true, name: '竖向三栏',   cells: 3, ratio: '2:3' },
-    { id: 'cols3-c', theme: '宝宝成长', hot: true, name: '三栏·文案',  cells: 3, ratio: '2:3' },
+    // ── 宝宝成长（合并原新生初见 / 满月百日 / 宝宝成长模版）──
+    { id: 'big1',    theme: '宝宝成长', hot: true, name: '主图突出',   cells: 3, ratio: '4:3' },
+    { id: 'big1-c',  theme: '宝宝成长', hot: true, name: '主图·文案',  cells: 3, ratio: '4:3' },
+    { id: 'split',   theme: '宝宝成长',            name: '左右切分',   cells: 3, ratio: '4:3' },
+    { id: 'split-c', theme: '宝宝成长',            name: '切分·文案',  cells: 3, ratio: '4:3' },
+    { id: 'v3',      theme: '宝宝成长',            name: '竖排三联',   cells: 3, ratio: '3:4' },
+    { id: 'v3-c',    theme: '宝宝成长',            name: '竖排·文案',  cells: 3, ratio: '3:4' },
+    { id: 'L',       theme: '宝宝成长',            name: 'L 型',       cells: 3, ratio: '1:1' },
+    { id: 'L-c',     theme: '宝宝成长',            name: 'L 型·文案',  cells: 3, ratio: '1:1' },
+    { id: '2x2',     theme: '宝宝成长',            name: '经典四宫格', cells: 4, ratio: '1:1' },
+    { id: '2x2-c',   theme: '宝宝成长',            name: '四格·文案',  cells: 4, ratio: '1:1' },
+    { id: 'mix1',    theme: '宝宝成长',            name: '混合模板',   cells: 4, ratio: '4:3' },
+    { id: 'mix1-c',  theme: '宝宝成长',            name: '混合·文案',  cells: 4, ratio: '4:3' },
+    { id: 'cols3',   theme: '宝宝成长',            name: '竖向三栏',   cells: 3, ratio: '2:3' },
+    { id: 'cols3-c', theme: '宝宝成长',            name: '三栏·文案',  cells: 3, ratio: '2:3' },
     { id: 'h3',      theme: '宝宝成长',            name: '横排三联',   cells: 3, ratio: '3:2' },
     { id: 'h3-c',    theme: '宝宝成长',            name: '横排·文案',  cells: 3, ratio: '3:2' },
     { id: '2x2b',    theme: '宝宝成长',            name: '紧凑四格',   cells: 4, ratio: '1:1' },
@@ -1034,7 +1066,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
     { id: 'rows3-c', theme: '宝宝成长',            name: '三排·文案',  cells: 3, ratio: '3:4' },
   ];
 
-  const tabs = ['孕期时光', '新生初见', '满月百日', '宝宝成长'];
+  const tabs = ['孕期时光', '宝宝成长'];
   const filtered = layouts.filter((l) => l.theme === tab);
   const current = layouts.find((l) => l.id === activeId && l.theme === tab)
     || filtered[0]
@@ -1045,6 +1077,23 @@ function LayoutPickerPage({ onBack, onConfirm }) {
   /** layout：选模板；album：全屏多选照片；edit：替换照片 / 补格 */
   const [viewMode, setViewMode] = useState('layout');
   const [pickerCell, setPickerCell] = useState(null); // null | idx — 单格替换
+
+  const inviteAlbumOnEmpty = bootstrap === 'demo-edit-last3-empty';
+
+  /** 美柚首页等入口：直接进入「替换照片」，并预填示例图（可继续替换）；末三格空白则相册邀约 */
+  React.useEffect(() => {
+    if (bootstrap !== 'demo-edit' && bootstrap !== 'demo-edit-last3-empty') return;
+    const fill = {};
+    const slots = bootstrap === 'demo-edit-last3-empty' ? 6 : 9;
+    for (let i = 0; i < slots; i += 1) {
+      fill[i] = PREVIEW_PHOTOS[i % PREVIEW_PHOTOS.length];
+    }
+    setTab('孕期时光');
+    setActiveId('3x3-c');
+    setCellPhotos(fill);
+    setViewMode('edit');
+    setPickerCell(null);
+  }, [bootstrap]);
 
   const openAlbumPicker = () => {
     setPickerCell(null);
@@ -1083,7 +1132,12 @@ function LayoutPickerPage({ onBack, onConfirm }) {
 
   const handleConfirm = () => {
     setFavorites((prev) => new Set([...prev, favKey(current)]));
-    onConfirm();
+    onConfirm({
+      layoutId: current.id,
+      themeTab: tab,
+      cellPhotos: { ...cellPhotos },
+      ratio: current.ratio,
+    });
   };
 
   // 点击格子填充照片
@@ -1119,13 +1173,12 @@ function LayoutPickerPage({ onBack, onConfirm }) {
     '2:3': { w: 185, h: 277 },
     '3:2': { w: 277, h: 185 },
   };
-  const dim = dimMap[current.ratio] || { w: 240, h: 240 };
+  const baseDim = dimMap[current.ratio] || { w: 240, h: 240 };
+  const dim = layoutCaptionFrameGrow(baseDim.w, baseDim.h, current.id);
 
   const isEdit = viewMode === 'edit';
   const isAlbum = viewMode === 'album';
-  const gridCols = current.cells === 4 ? 2 : 3;
   const captions = THEME_CAPTIONS[tab] || [];
-  const hasCaption = current.id.endsWith('-c');
 
   return (
     <div style={{
@@ -1237,6 +1290,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
               onCellTap={(idx, src) => replaceCell(idx, src)}
               onPickPhoto={(idx) => setPickerCell(idx)}
               editable={true}
+              inviteAlbumOnEmpty={inviteAlbumOnEmpty && isEdit}
               />
             </div>
 
@@ -1279,13 +1333,14 @@ function LayoutPickerPage({ onBack, onConfirm }) {
       }}>
         <div style={{ display: 'flex', borderBottom: `0.5px solid ${C.line}` }}>
           {tabs.map((t) => (
-            <button key={t} onClick={() => handleTabChange(t)} style={{
+            <button key={t} type="button" onClick={() => handleTabChange(t)} style={{
               flex: 1, padding: '10px 2px 9px',
               border: 'none', background: 'transparent', cursor: 'pointer',
               fontSize: 12, fontWeight: tab === t ? 600 : 400,
               color: tab === t ? C.pink : C.ink2,
               borderBottom: tab === t ? `2px solid ${C.pink}` : '2px solid transparent',
               marginBottom: -0.5, whiteSpace: 'nowrap',
+              fontFamily: FONT_SANS,
             }}>{t}</button>
           ))}
         </div>
@@ -1309,7 +1364,6 @@ function LayoutPickerPage({ onBack, onConfirm }) {
                   position: 'relative',
                 }}>
                   <LayoutGlyph kind={l.id} active={active} />
-                  {/* 每个缩略图右上角的爱心 */}
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleFavLayout(l); }}
                     style={{
@@ -1394,7 +1448,7 @@ function LayoutPickerPage({ onBack, onConfirm }) {
 }
 
 // ── 首页 ──────────────────────────────────────────────────────
-function PuzzlePage({ onGenerate, onWorks }) {
+function PuzzlePage({ onGenerate, onWorks, onNavigateBack }) {
   const [previewIdx, setPreviewIdx] = useState(0);
   const [counter, setCounter] = useState(12847);
   const [scrolled, setScrolled] = useState(false);
@@ -1567,7 +1621,7 @@ function PuzzlePage({ onGenerate, onWorks }) {
         transition: 'background 0.2s, border-color 0.2s',
         pointerEvents: 'auto',
       }}>
-        <button aria-label="返回" style={{
+        <button type="button" aria-label="返回" onClick={onNavigateBack} style={{
           width: 36, height: 36, border: 0,
           background: scrolled ? 'transparent' : 'rgba(255,255,255,0.7)',
           borderRadius: 18, cursor: 'pointer', display: 'flex',
@@ -1689,9 +1743,22 @@ function ShareSheet({ onClose }) {
   );
 }
 
-// ── 完成页 ──────────────────────────────────────────────────────
-function CompletionPage({ onClose, onWorks }) {
+// ── 完成页：与编辑页同一套模板 & 照片 ─────────────────────────────
+function CompletionPage({ card, onClose, onMakeAnother, onWorks }) {
   const [shareOpen, setShareOpen] = useState(false);
+
+  const captions = THEME_CAPTIONS[themeTabForCaptions(card.themeTab)] || [];
+  const previewPhotos = Array.from({ length: 9 }, (_, i) => card.cellPhotos[i] ?? null);
+
+  const dimMapDone = {
+    '1:1': { w: 240, h: 240 },
+    '3:4': { w: 196, h: 261 },
+    '4:3': { w: 261, h: 196 },
+    '2:3': { w: 185, h: 277 },
+    '3:2': { w: 277, h: 185 },
+  };
+  const baseDimDone = dimMapDone[card.ratio] || { w: 240, h: 240 };
+  const dim = layoutCaptionFrameGrow(baseDimDone.w, baseDimDone.h, card.layoutId);
 
   React.useEffect(() => {
     const id = 'confetti-keyframes';
@@ -1761,33 +1828,40 @@ function CompletionPage({ onClose, onWorks }) {
           <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>已自动保存至时间轴</div>
         </div>
 
-        {/* 纪念卡预览 */}
+        {/* 纪念卡预览（与「替换照片」页同一 LayoutPreview 数据） */}
         <div style={{
-          marginTop: 20, width: 290, position: 'relative', zIndex: 10,
-          border: '1.5px solid #8b7355', borderRadius: 4,
-          boxShadow: 'inset 0 0 0 5px #fff, inset 0 0 0 6px rgba(139,115,85,0.20), 0 16px 40px rgba(80,30,40,0.22)',
-          background: '#fffaf6', overflow: 'hidden',
+          marginTop: 20, width: '100%', padding: '0 14px', boxSizing: 'border-box',
+          position: 'relative', zIndex: 10,
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2, padding: 2 }}>
-            {PREVIEW_PHOTOS.slice(0, 9).map((src, i) => (
-              <div key={i} style={{ aspectRatio: '1', overflow: 'hidden', background: '#ddd6cf' }}>
-                <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              </div>
-            ))}
-          </div>
-          <div style={{ padding: '10px 14px 12px', textAlign: 'center', borderTop: '0.5px solid rgba(139,115,85,0.18)', position: 'relative' }}>
-            <div style={{ fontFamily: FONT_SERIF, fontSize: 15, fontWeight: 700, letterSpacing: 5, color: '#2a1f0a' }}>豆 豆</div>
-            <div style={{ fontSize: 8.5, color: '#8b7355', marginTop: 4, letterSpacing: 0.5 }}>
-              BIRTHDAY · 2026.06.28 · WEIGHT · 3200G · HEIGHT · 50CM
+          <div style={{
+            width: '100%', maxWidth: 304, margin: '0 auto',
+            border: '1.5px solid #8b7355', borderRadius: 4,
+            boxShadow: 'inset 0 0 0 5px #fff, inset 0 0 0 6px rgba(139,115,85,0.20), 0 16px 40px rgba(80,30,40,0.22)',
+            background: '#fffaf6', overflow: 'hidden',
+          }}>
+            <div style={{ aspectRatio: `${dim.w}/${dim.h}`, width: '100%' }}>
+              <LayoutPreview
+                layoutId={card.layoutId}
+                captionTexts={captions}
+                photos={previewPhotos}
+                editable
+                readOnly
+              />
             </div>
-            <div style={{ position: 'absolute', bottom: 6, right: 10, fontSize: 8, color: C.pink, opacity: 0.65, fontWeight: 600, letterSpacing: 0.5 }}>美柚</div>
+            <div style={{ padding: '10px 14px 12px', textAlign: 'center', borderTop: '0.5px solid rgba(139,115,85,0.18)', position: 'relative' }}>
+              <div style={{ fontFamily: FONT_SERIF, fontSize: 15, fontWeight: 700, letterSpacing: 5, color: '#2a1f0a' }}>豆 豆</div>
+              <div style={{ fontSize: 8.5, color: '#8b7355', marginTop: 4, letterSpacing: 0.5 }}>
+                BIRTHDAY · 2026.06.28 · WEIGHT · 3200G · HEIGHT · 50CM
+              </div>
+              <div style={{ position: 'absolute', bottom: 6, right: 10, fontSize: 8, color: C.pink, opacity: 0.65, fontWeight: 600, letterSpacing: 0.5 }}>美柚</div>
+            </div>
           </div>
         </div>
 
         {/* 按钮区 */}
         <div style={{ marginTop: 22, width: '100%', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', zIndex: 10 }}>
           {/* 主按钮：再做一张 */}
-          <button onClick={onClose} style={{
+          <button onClick={onMakeAnother ?? onClose} style={{
             width: '100%', height: 50, borderRadius: 26, border: 0,
             background: `linear-gradient(135deg, #ff6e9c 0%, ${C.pink} 100%)`,
             color: '#fff', fontSize: 16, fontWeight: 700,
@@ -1888,7 +1962,33 @@ function WorksPage({ onBack }) {
 
 // ── 主应用（iOS 设备框架包裹）────────────────────────────────
 export default function App() {
-  const [screen, setScreen] = useState('home');
+  const [screen, setScreen] = useState('meiyou');
+  const [savedCard, setSavedCard] = useState(null);
+  /** 成长纪念卡返回时要去往的上一页（首页引导 / 个人中心等） */
+  const [homeReturnScreen, setHomeReturnScreen] = useState('meiyou');
+
+  /** key 递增以强制重装模板页；bootstrap 参见 LayoutPickerPage */
+  const [layoutSession, setLayoutSession] = useState(() => ({
+    key: 0,
+    /** @type {null | 'demo-edit' | 'demo-edit-last3-empty'} */
+    bootstrap: null,
+    backTarget: /** @type {'home' | 'meiyou'} */ ('home'),
+  }));
+
+  const goToLayoutPicker = (opts = {}) => {
+    setLayoutSession((prev) => ({
+      key: prev.key + 1,
+      bootstrap: opts.bootstrap ?? null,
+      backTarget: opts.backTarget ?? 'home',
+    }));
+    setScreen('layout');
+  };
+
+  /** 着陆页「成长纪念卡」活动承接（仍为 Puzzle 首页） */
+  const openGrowthCardFrom = (fromScreen) => {
+    setHomeReturnScreen(fromScreen);
+    setScreen('home');
+  };
 
   return (
     <div style={{
@@ -1899,17 +1999,51 @@ export default function App() {
       <IOSDevice width={402} height={874}>
         {screen === 'home' && (
           <PuzzlePage
-            onGenerate={() => setScreen('layout')}
-            onWorks={() => setScreen('works')} />
+            onGenerate={() => goToLayoutPicker({ backTarget: 'home' })}
+            onWorks={() => setScreen('works')}
+            onNavigateBack={() => setScreen(homeReturnScreen)}
+          />
+        )}
+        {screen === 'meiyou' && (
+          <MeiyouHomePage
+            onOpenBabyProfile={() => setScreen('babyProfile')}
+            onTapTryNow={() => {
+              setHomeReturnScreen('meiyou');
+              goToLayoutPicker({ backTarget: 'meiyou', bootstrap: 'demo-edit-last3-empty' });
+            }}
+            onTapFamilyGuide={() => {
+              setHomeReturnScreen('meiyou');
+              goToLayoutPicker({ backTarget: 'meiyou', bootstrap: 'demo-edit' });
+            }}
+          />
+        )}
+        {screen === 'babyProfile' && (
+          <MeiyouBabyProfilePage
+            onBack={() => setScreen('meiyou')}
+            onGoGrowthCard={() => openGrowthCardFrom('babyProfile')}
+          />
         )}
         {screen === 'layout' && (
           <LayoutPickerPage
-            onBack={() => setScreen('home')}
-            onConfirm={() => setScreen('done')} />
+            key={layoutSession.key}
+            bootstrap={layoutSession.bootstrap}
+            onBack={() => setScreen(layoutSession.backTarget)}
+            onConfirm={(payload) => {
+              setSavedCard(payload);
+              setScreen('done');
+            }} />
         )}
-        {screen === 'done' && (
+        {screen === 'done' && savedCard && (
           <CompletionPage
-            onClose={() => setScreen('home')}
+            card={savedCard}
+            onClose={() => {
+              setSavedCard(null);
+              setScreen('home');
+            }}
+            onMakeAnother={() => {
+              setSavedCard(null);
+              goToLayoutPicker({ backTarget: 'home' });
+            }}
             onWorks={() => setScreen('works')} />
         )}
         {screen === 'works' && (
