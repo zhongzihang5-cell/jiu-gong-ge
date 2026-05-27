@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { IOSDevice } from './IOSFrame';
 import { MeiyouHomePage } from './MeiyouHomePage';
 import { MeiyouBabyProfilePage } from './MeiyouBabyProfilePage';
 import { ScatterGridPolaroid } from './ScatterGridPolaroid';
+import { FinishedProductPreviewOverlay } from './FinishedProductPreview';
 
 // ── 样本数据 ──────────────────────────────────────────────────
 const SAMPLES = [
@@ -30,6 +31,18 @@ const C = {
 
 const FONT_SANS = `-apple-system, "PingFang SC", "Noto Sans SC", system-ui, sans-serif`;
 const FONT_SERIF = `"Noto Serif SC", "Songti SC", "STSong", serif`;
+/** 「期待感」方案 D / 出生金辉格 — 与原 album-future.jsx 对齐 */
+const FONT_FET_MONO = `"IBM Plex Mono", "SF Mono", ui-monospace, Menlo, monospace`;
+
+const FET_ANT = {
+  gold: '#b89f76',
+  goldDeep: '#8a6f3e',
+  goldGlow: '#e8c98a',
+  ink: '#2b2620',
+  ink2: '#5d5448',
+  mute: '#a89e8b',
+  bgCell: '#e9dfd0',
+};
 
 // ── 自动轮播 carousel ────────────────────────────────────────
 function HeroPreview({ idx, setIdx, onGenerate }) {
@@ -395,13 +408,71 @@ const PREVIEW_PHOTOS = [
 ];
 
 const THEME_CAPTIONS = {
-  '孕期时光': ['孕5周', '孕8周', '孕12周', '孕16周', '孕20周', '孕24周', '孕28周', '孕32周', '孕36周'],
+  '孕期时光': ['孕5周', '孕8周', '孕12周', '孕16周', '孕20周', '孕24周', '孕28周', '孕32周', '出生'],
   /** 新生儿 · 满月 · 成长期 合并文案池 */
   '宝宝成长': [
     '出生第1天', '出生第7天', '出生第14天', '满月', '宝宝60天',
     '百日', '6个月', '9个月', '1岁', '1岁半', '2岁',
   ],
 };
+
+/** 美柚「入口3」· 未到周数锁定格的发育示意（孕28 / 孕32） */
+const PREG_TIME_LOCK_COPY = {
+  6: { emoji: '🍆', likeness: '像一颗茄子', cm: '约 38cm' },
+  7: { emoji: '🥦', likeness: '像一颗椰菜', cm: '约 43cm' },
+};
+
+/** 胎宝宝 · 方案 D「微光预告」：弱显示例图 + 金色 +周 + tips（同源 album-future VariantD） */
+const FETUS_LUXURY_MILESTONE_SLOT = {
+  6: {
+    date: '2026.07.22',
+    deltaWeeks: 8,
+    tip: '拍一张大肚剪影',
+    previewSrc: 'assets/p4.jpg',
+  },
+  7: {
+    date: '2026.08.19',
+    deltaWeeks: 12,
+    tip: '布置宝宝小床',
+    previewSrc: 'assets/p7.jpg',
+  },
+};
+
+/** 出生格 · BirthCellGoldPreview：逆光 + 光束 + sparkle + 文案 + 日期 */
+const FETUS_BIRTH_LUXURY = { dateLine: '2026.06.28', haloSrc: 'assets/p1.jpg' };
+
+function FetusAnticipSparkle({ size = 16, color = FET_ANT.goldDeep }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: 'block' }} aria-hidden>
+      <path d="M8 0 L9.2 6.8 L16 8 L9.2 9.2 L8 16 L6.8 9.2 L0 8 L6.8 6.8 Z" fill={color} />
+    </svg>
+  );
+}
+
+function FetusAnticipSunburstRays({ stroke }) {
+  const cx = 50;
+  const cy = 50;
+  const rays = [];
+  for (let i = 0; i < 12; i += 1) {
+    const a = (i / 12) * Math.PI * 2;
+    const r1 = 18;
+    const r2 = 42;
+    rays.push(
+      <line
+        key={i}
+        x1={cx + Math.cos(a) * r1}
+        y1={cy + Math.sin(a) * r1}
+        x2={cx + Math.cos(a) * r2}
+        y2={cy + Math.sin(a) * r2}
+        stroke={stroke}
+        strokeWidth="0.4"
+        strokeLinecap="round"
+        opacity={0.5}
+      />
+    );
+  }
+  return <g>{rays}</g>;
+}
 
 /** 已保存的卡若仍为旧四类里的「新生初见 / 满月百日」，文案归入宝宝成长池 */
 function themeTabForCaptions(themeTab) {
@@ -737,6 +808,18 @@ function LayoutPreview({
   editable = false, readOnly = false,
   /** 空格展示「轻量加号占位」且点击直接进入相册替换（不写示例图快捷填充） */
   inviteAlbumOnEmpty = false,
+  /** 与 inviteAlbumOnEmpty 同用：在背后叠一层弱化示例照，弱化空版面感 */
+  emptyInviteBackdropDiagram = false,
+  /** 未到时间锁定格索引（整块不可点） */
+  timeLockedSlotIndices = [],
+  /** 出生里程碑「期待态」格索引（整块不可点） */
+  birthAnticipationSlotIndex = null,
+  /** 胎宝宝 demo：未到周 / 出生格使用米色里程碑大卡（已出生链路须为 false） */
+  useFetusMilestonePlaceholders = false,
+  /** 已填格仍画「替换照片」角标，但整块不可交互（海报 / 示意） */
+  replaceControlsDecorative = false,
+  /** 从该下标起的已填照片整体变暗（0-based，null 关闭）—— 示意「占位」观感 */
+  experienceDimFromIndex = null,
 }) {
   const interactive = editable && !readOnly;
   const hasCaption = layoutId.endsWith('-c');
@@ -746,12 +829,330 @@ function LayoutPreview({
   /** 三联/四联竖栏：在整列条状照片上加底栏文案（非九宫格那种格内正方形） */
   const verticalColumnCaptionLayout = baseId === 'cols4' || baseId === 'cols3';
 
+  const lockedIdxSet = new Set(timeLockedSlotIndices);
+
   const cell = (idx) => {
     const captionLine = hasCaption
       ? captionTexts[idx % Math.max(captionTexts.length, 1)]
       : '';
     const userSrc = userPhotos[idx] ?? null;
     const demoSrc = PREVIEW_PHOTOS[idx % PREVIEW_PHOTOS.length];
+    const lockedCopy = lockedIdxSet.has(idx) ? PREG_TIME_LOCK_COPY[idx] : undefined;
+    const isBirthExpect = birthAnticipationSlotIndex === idx;
+
+    /** 未到时间栅 / 出生期待栅：不参与正常填图逻辑（演示态） */
+    if (lockedCopy || isBirthExpect) {
+      const captionRaw = captionLine != null && String(captionLine).trim() !== ''
+        ? String(captionLine)
+        : '\u00a0';
+
+      const fetusLuxCards = !!useFetusMilestonePlaceholders;
+
+      const captionBarLabel = () => {
+        if (isBirthExpect) {
+          if (useFetusMilestonePlaceholders) return '\u2726 宝宝出生 \u2726';
+          return `\u2726 ${captionRaw} \u2726`;
+        }
+        return captionRaw;
+      };
+
+      const captionBirthLuxury = isBirthExpect && useFetusMilestonePlaceholders;
+      const captionWeekLuxury = !!lockedCopy && useFetusMilestonePlaceholders;
+      const timeLockPhotoSlot = () => {
+        if (!lockedCopy) return null;
+        if (!fetusLuxCards) {
+          return (
+            <>
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(180deg,#fffafb 0%, #fff0f3 52%, #ffe8ee 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+                padding: 6,
+              }}
+              >
+                <span style={{ fontSize: 15, lineHeight: 1 }} aria-hidden>{lockedCopy.emoji}</span>
+                <span style={{ fontSize: 9, fontWeight: 500, color: C.ink2, textAlign: 'center', lineHeight: 1.25 }}>
+                  {lockedCopy.likeness}
+                </span>
+                <span style={{ fontSize: 8.5, color: C.mute }}>{lockedCopy.cm}</span>
+              </div>
+              <div style={{
+                position: 'absolute', inset: 2,
+                border: '1px dashed rgba(255,91,138,0.22)', borderRadius: 3, pointerEvents: 'none',
+              }} />
+            </>
+          );
+        }
+        const lm = FETUS_LUXURY_MILESTONE_SLOT[idx];
+        if (!lm) return null;
+        return (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: FET_ANT.bgCell,
+            borderRadius: 2,
+            overflow: 'hidden',
+          }}
+          >
+            <img
+              src={lm.previewSrc}
+              alt=""
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%', objectFit: 'cover',
+                display: 'block',
+                opacity: 0.32,
+                filter: 'grayscale(0.42) blur(0.4px)',
+              }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, rgba(253,245,232,0.53) 0%, rgba(253,245,232,0.88) 100%)',
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0, padding: 6,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              textAlign: 'center',
+            }}
+            >
+              <div style={{
+                fontFamily: FONT_SERIF,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                fontSize: 12,
+                color: FET_ANT.gold,
+                letterSpacing: -0.4,
+                lineHeight: 1,
+              }}
+              >
+                +{lm.deltaWeeks}<span style={{ fontSize: 7.8, fontWeight: 500, marginLeft: 1 }}>周</span>
+              </div>
+              <div style={{
+                marginTop: 5,
+                fontFamily: FONT_SERIF,
+                fontStyle: 'italic',
+                fontSize: 8.2,
+                fontWeight: 400,
+                color: FET_ANT.ink,
+                lineHeight: 1.25,
+              }}
+              >
+                {lm.tip}
+              </div>
+            </div>
+            <div style={{
+              position: 'absolute', top: 5, right: 5,
+              fontFamily: FONT_FET_MONO,
+              fontSize: 7.2,
+              color: FET_ANT.mute,
+              letterSpacing: 0.4,
+              lineHeight: 1,
+            }}
+            >
+              {lm.date}
+            </div>
+          </div>
+        );
+      };
+
+      const birthExpectPhotoSlot = () => {
+        if (!isBirthExpect) return null;
+        if (!fetusLuxCards) {
+          return (
+            <>
+              <div style={{
+                position: 'absolute', inset: 0,
+                background:
+                  'radial-gradient(ellipse 90% 80% at 50% 35%, rgba(255,252,246,1) 0%, rgba(255,236,220,1) 55%, rgba(245,226,208,1) 100%)',
+                boxShadow: 'inset 0 0 0 1.5px rgba(212,165,116,0.45)',
+              }}
+              />
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 6, padding: 6,
+              }}
+              >
+                <span style={{ fontSize: 15, opacity: 0.9 }} aria-hidden="true">✨</span>
+                <span style={{
+                  fontFamily: FONT_SERIF,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  letterSpacing: 1,
+                  color: '#8a6440',
+                  textShadow: '0 1px 0 rgba(255,255,255,0.6)',
+                }}
+                >
+                  终于见到你
+                </span>
+              </div>
+            </>
+          );
+        }
+        const d = FETUS_BIRTH_LUXURY.dateLine;
+        const haloSrc = FETUS_BIRTH_LUXURY.haloSrc;
+        return (
+          <div style={{
+            position: 'absolute', inset: 0,
+            borderRadius: 2,
+            overflow: 'hidden',
+            background: FET_ANT.bgCell,
+            border: `1px solid ${FET_ANT.goldGlow}`,
+            boxShadow: `0 0 0 1px rgba(232,201,138,0.33)`,
+          }}
+          >
+            <img src={haloSrc} alt="" style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+              opacity: 0.28,
+              filter: 'sepia(0.5) blur(0.35px)',
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `radial-gradient(circle at 50% 40%, rgba(232,201,138,0.62) 0%, rgba(253,246,227,0.86) 60%, rgba(240,226,187, 0.92) 100%)`,
+            }} />
+            <svg viewBox="0 0 100 100" style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none',
+            }}
+            preserveAspectRatio="xMidYMid slice"
+            >
+              <FetusAnticipSunburstRays stroke={FET_ANT.gold} />
+            </svg>
+            <div style={{
+              position: 'absolute', inset: 0, padding: 6,
+              textAlign: 'center',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+            >
+              <FetusAnticipSparkle size={18} />
+              <div style={{
+                marginTop: 5,
+                fontFamily: FONT_SERIF,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                fontSize: 10,
+                color: FET_ANT.goldDeep,
+                lineHeight: 1.22,
+                letterSpacing: 0.75,
+              }}
+              >
+                你出生那刻
+              </div>
+              <div style={{
+                marginTop: 3,
+                fontFamily: FONT_FET_MONO,
+                fontSize: 7.5,
+                color: FET_ANT.gold,
+                letterSpacing: 0.6,
+              }}
+              >
+                {d}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      if (hasCaption && !verticalColumnCaptionLayout) {
+        return (
+          <div
+            key={idx}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              minWidth: 0,
+              minHeight: 0,
+              height: '100%',
+              overflow: 'hidden',
+              alignItems: 'stretch',
+            }}
+          >
+            <div style={{
+              flex: 1,
+              minHeight: 0,
+              minWidth: 0,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            >
+              <div style={{
+                width: '100%',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                aspectRatio: '1 / 1',
+                margin: '0 auto',
+                position: 'relative',
+                overflow: 'hidden',
+                flexShrink: 0,
+                minWidth: 0,
+                background: '#faf8f5',
+                cursor: 'default',
+                borderRadius: 2,
+              }}
+              >
+                {lockedCopy ? timeLockPhotoSlot() : birthExpectPhotoSlot()}
+              </div>
+            </div>
+            <div style={{
+              flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#fffaf6', padding: '3px 4px',
+              borderTop: '0.5px solid rgba(139,115,85,0.18)',
+            }}
+            >
+              <span style={{
+                fontFamily: FONT_SERIF,
+                fontStyle: captionBirthLuxury ? 'normal' : 'italic',
+                fontWeight: 500,
+                fontSize: captionWeekLuxury ? 11 : 10,
+                color: captionBirthLuxury
+                  ? FET_ANT.goldDeep
+                  : (captionWeekLuxury ? FET_ANT.ink2 : (isBirthExpect ? '#9a6f3f' : '#c4a09a')),
+                lineHeight: 1.25, letterSpacing: captionBirthLuxury ? 0.9 : (isBirthExpect ? 0.6 : 0.3),
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                display: captionBirthLuxury ? 'inline-flex' : undefined,
+                alignItems: captionBirthLuxury ? 'center' : undefined,
+                justifyContent: captionBirthLuxury ? 'center' : undefined,
+                gap: captionBirthLuxury ? 4 : undefined,
+              }}
+              >
+                {captionBirthLuxury ? (
+                  <>
+                    <span style={{ color: FET_ANT.goldDeep, fontSize: 9, lineHeight: 1 }} aria-hidden>{'\u2726'}</span>
+                    <span>宝宝出生</span>
+                    <span style={{ color: FET_ANT.goldDeep, fontSize: 9, lineHeight: 1 }} aria-hidden>{'\u2726'}</span>
+                  </>
+                ) : (
+                  captionBarLabel()
+                )}
+              </span>
+            </div>
+          </div>
+        );
+      }
+
+      /** 无时 per-cell 底栏或非方形格文案布局：仍占位，避免误判为空白格继续走填图逻辑 */
+      return (
+        <div
+          key={idx}
+          style={{
+            overflow: 'hidden', background: '#faf8f5',
+            minWidth: 0, minHeight: 0, position: 'relative',
+            cursor: 'default',
+          }}
+        >
+          {lockedCopy ? timeLockPhotoSlot() : birthExpectPhotoSlot()}
+        </div>
+      );
+    }
+
     const src = editable ? userSrc : (userSrc ?? demoSrc);
     const filled = src !== null;
 
@@ -768,16 +1169,32 @@ function LayoutPreview({
       <>
         {inviteAlbumOnEmpty ? (
           <div style={{
-            position: 'absolute', inset: 0,
-            background: '#faf8f5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: emptyInviteBackdropDiagram ? 'transparent' : '#faf8f5',
+          }}
+          >
+            {emptyInviteBackdropDiagram && (
+              <>
+                <img src={demoSrc} alt="" style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  objectFit: 'cover', display: 'block', opacity: 0.26,
+                }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,248,244,0.78)' }} />
+              </>
+            )}
             <span style={{
+              position: 'relative', zIndex: 1,
               width: 32, height: 32, borderRadius: 16,
               border: `1.5px dashed ${C.pink}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 22, color: C.pink, fontWeight: 400, lineHeight: 1,
               fontFamily: FONT_SANS,
+              background: 'rgba(255,255,255,0.76)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             }} aria-hidden="true">＋</span>
           </div>
         ) : (
@@ -808,15 +1225,23 @@ function LayoutPreview({
       </>
     );
 
-    // ── 已填格子：照片全展示 + 「替换照片」小按钮 ───────────────────
+    const dimPhoto = experienceDimFromIndex != null && idx >= experienceDimFromIndex;
+
+    /** 已填格子：照片全展示 + 「替换照片」小按钮 ─────────────────── */
     const filledInner = () => (
       <>
         <img src={src} alt="" style={{
           position: 'absolute', inset: 0,
           width: '100%', height: '100%',
           objectFit: 'cover', display: 'block',
+          opacity: dimPhoto ? 0.5 : 1,
         }} />
-        {interactive && (
+        {dimPhoto && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(250,246,242,0.28)', pointerEvents: 'none',
+          }} />
+        )}
+        {(interactive || replaceControlsDecorative) && (
           <>
             {!hasCaption && (
               <div style={{
@@ -826,14 +1251,20 @@ function LayoutPreview({
               }} />
             )}
             <button
-              onClick={(e) => { e.stopPropagation(); onPickPhoto?.(idx); }}
+              type="button"
+              tabIndex={replaceControlsDecorative ? -1 : 0}
+              onClick={(e) => {
+                if (replaceControlsDecorative) { e.preventDefault(); e.stopPropagation(); }
+                else { e.stopPropagation(); onPickPhoto?.(idx); }
+              }}
               style={{
                 position: 'absolute', bottom: 5, left: '50%', transform: 'translateX(-50%)',
                 padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap',
                 background: hasCaption ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.22)',
                 border: hasCaption ? '0.5px solid rgba(0,0,0,0.10)' : '0.5px solid rgba(255,255,255,0.50)',
-                fontSize: 8.5, color: hasCaption ? C.ink2 : '#fff', cursor: 'pointer',
+                fontSize: 8.5, color: hasCaption ? C.ink2 : '#fff', cursor: replaceControlsDecorative ? 'default' : 'pointer',
                 boxShadow: hasCaption ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                pointerEvents: replaceControlsDecorative ? 'none' : 'auto',
               }}>替换照片</button>
           </>
         )}
@@ -1028,6 +1459,267 @@ function LayoutPreview({
   }
 }
 
+/** 替换照片页顶部 · 3×3 缩略占位（入口3：已填 / 待定 / 「＋」） */
+function BirthProgressNineMini({
+  gap = 1,
+  /** 前六格展示的图地址；不传则用样本图占位 */
+  firstSixSrc,
+  /** 胎宝宝 demo：后三格用米色里程碑缩略观感 */
+  fetusNineMiniLuxury = false,
+}) {
+  const thumbs = PREVIEW_PHOTOS;
+  const row = firstSixSrc
+    ?? [0, 1, 2, 3, 4, 5].map((i) => thumbs[i % thumbs.length]);
+
+  const cellImg = (i) => (
+    <img src={row[i]} alt="" style={{
+      width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+    }} />
+  );
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gridTemplateRows: 'repeat(3, 1fr)',
+      gap,
+      width: '100%', height: '100%',
+      background: '#fff',
+      boxSizing: 'border-box',
+    }}
+    >
+      {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} style={{ minWidth: 0, minHeight: 0, overflow: 'hidden' }}>{cellImg(i)}</div>)}
+      {fetusNineMiniLuxury ? (
+        <>
+          <div style={{
+            minWidth: 0,
+            minHeight: 0,
+            overflow: 'hidden',
+            background: FET_ANT.bgCell,
+            position: 'relative',
+          }}
+          >
+            <img
+              src={FETUS_LUXURY_MILESTONE_SLOT[6].previewSrc}
+              alt=""
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                opacity: 0.38, filter: 'grayscale(0.35)',
+              }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, rgba(253,245,232,0.5) 0%, rgba(253,245,232,0.78) 100%)',
+            }} />
+          </div>
+          <div style={{
+            minWidth: 0,
+            minHeight: 0,
+            overflow: 'hidden',
+            background: FET_ANT.bgCell,
+            position: 'relative',
+          }}
+          >
+            <img
+              src={FETUS_LUXURY_MILESTONE_SLOT[7].previewSrc}
+              alt=""
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                opacity: 0.38, filter: 'grayscale(0.35)',
+              }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, rgba(253,245,232,0.5) 0%, rgba(253,245,232,0.78) 100%)',
+            }} />
+          </div>
+          <div style={{
+            minWidth: 0, minHeight: 0,
+            background: '#ede4d6',
+            border: `0.5px solid ${FET_ANT.goldGlow}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', overflow: 'hidden',
+          }}
+          >
+            <img
+              src={FETUS_BIRTH_LUXURY.haloSrc}
+              alt=""
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%', objectFit: 'cover', opacity: 0.22,
+                filter: 'sepia(0.45)', display: 'block',
+              }}
+            />
+            <span style={{
+              position: 'relative', zIndex: 1,
+              fontSize: 10, fontWeight: 500, color: FET_ANT.goldDeep, lineHeight: 1,
+              fontFamily: FONT_SERIF,
+            }} aria-hidden>{'\u2726'}</span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{
+            background: '#fff3f7',
+            border: '0.5px dashed rgba(255,91,138,0.28)',
+            minWidth: 0, minHeight: 0,
+          }} />
+          <div style={{
+            background: '#fff3f7',
+            border: '0.5px dashed rgba(255,91,138,0.28)',
+            minWidth: 0, minHeight: 0,
+          }} />
+          <div style={{
+            background: 'linear-gradient(180deg,#fffceb 0%, #fff5d9 100%)',
+            border: '0.5px solid rgba(212,175,116,0.35)',
+            minWidth: 0, minHeight: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          >
+            <span style={{ fontSize: 9, fontWeight: 400, color: '#c9a227', lineHeight: 1 }} aria-hidden="true">＋</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** 圆环进度：入口3顶部独立摘要卡（不与下方拼图边框合二为一） */
+function MemorialStoryRingHeader({
+  pct = 67,
+  total = 9,
+  collected = 6,
+  babyName = '豆豆',
+  firstSixSrc,
+  onPreviewTap,
+  fetusNineMiniLuxury = false,
+}) {
+  const ringR = 34;
+  const ringC = 2 * Math.PI * ringR;
+  const pctClamped = Math.max(0, Math.min(100, pct)) / 100;
+  const dash = ringC * pctClamped;
+
+  const wrap = 76;
+  const cx = wrap / 2;
+  const cSafe = Math.min(collected, total);
+  const rest = Math.max(0, total - cSafe);
+
+  return (
+    <div style={{
+      flexShrink: 0,
+      padding: '14px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+    }}
+    >
+      <div
+        aria-hidden
+        style={{
+          flexShrink: 0,
+          width: wrap,
+          height: wrap,
+          position: 'relative',
+        }}
+      >
+        <svg
+          width={wrap}
+          height={wrap}
+          viewBox={`0 0 ${wrap} ${wrap}`}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            transform: 'rotate(-88deg)',
+            transformOrigin: '50% 50%',
+          }}
+        >
+          <circle
+            cx={cx}
+            cy={cx}
+            r={ringR}
+            fill="none"
+            stroke="rgba(255,91,138,0.12)"
+            strokeWidth="4"
+          />
+          <circle
+            cx={cx}
+            cy={cx}
+            r={ringR}
+            fill="none"
+            stroke={C.pink}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${ringC}`}
+          />
+        </svg>
+        <div style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 50,
+          height: 50,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          border: '0.5px solid rgba(255,255,255,0.9)',
+          boxShadow: '0 1px 4px rgba(80,40,50,0.08)',
+          boxSizing: 'border-box',
+        }}
+        >
+          <BirthProgressNineMini gap={1} firstSixSrc={firstSixSrc} fetusNineMiniLuxury={fetusNineMiniLuxury} />
+        </div>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 500,
+          color: C.ink,
+          marginBottom: 6,
+          lineHeight: 1.35,
+          fontFamily: FONT_SANS,
+        }}
+        >
+          {babyName}的故事 · 进行到{' '}
+          <span style={{ color: C.pink }}>{pct}%</span>
+        </div>
+        <div style={{
+          fontSize: 11,
+          color: C.mute,
+          lineHeight: 1.43,
+          marginBottom: 10,
+          fontFamily: FONT_SANS,
+        }}
+        >
+          已完成{' '}
+          <span style={{ color: C.pink, fontWeight: 500 }}>
+            {cSafe}/{total}
+          </span>
+          {' '}· 再填 {rest} 格即可生成
+        </div>
+        <button
+          type="button"
+          onClick={onPreviewTap}
+          style={{
+            background: '#fff5f9',
+            padding: '6px 14px',
+            borderRadius: 80,
+            fontSize: 12,
+            fontWeight: 500,
+            color: C.pink,
+            cursor: onPreviewTap ? 'pointer' : 'default',
+            letterSpacing: 0.2,
+            border: `0.5px solid rgba(255,91,138,0.18)`,
+            fontFamily: FONT_SANS,
+          }}
+        >
+          成品预览
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── 模板选择页 ────────────────────────────────────────────────
 function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
   const [tab, setTab] = useState('孕期时光');
@@ -1077,22 +1769,36 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
   /** layout：选模板；album：全屏多选照片；edit：替换照片 / 补格 */
   const [viewMode, setViewMode] = useState('layout');
   const [pickerCell, setPickerCell] = useState(null); // null | idx — 单格替换
+  const puzzleSectionRef = useRef(null);
+  const [finishedPreviewOpen, setFinishedPreviewOpen] = useState(false);
 
-  const inviteAlbumOnEmpty = bootstrap === 'demo-edit-last3-empty';
+  /** 美柚入口2 · 九宫格全无真实照片；入口3 · 部分已填 + 时间锁格子 */
+  const isBornEmptyDemo = bootstrap === 'demo-born-empty';
+  const isPartialMemorialDemo =
+    bootstrap === 'demo-born-progress' || bootstrap === 'demo-fetus-progress';
+  const useFetusLuxuryLocks = bootstrap === 'demo-fetus-progress';
 
-  /** 美柚首页等入口：直接进入「替换照片」，并预填示例图（可继续替换）；末三格空白则相册邀约 */
   React.useEffect(() => {
-    if (bootstrap !== 'demo-edit' && bootstrap !== 'demo-edit-last3-empty') return;
-    const fill = {};
-    const slots = bootstrap === 'demo-edit-last3-empty' ? 6 : 9;
-    for (let i = 0; i < slots; i += 1) {
-      fill[i] = PREVIEW_PHOTOS[i % PREVIEW_PHOTOS.length];
-    }
-    setTab('孕期时光');
-    setActiveId('3x3-c');
-    setCellPhotos(fill);
-    setViewMode('edit');
     setPickerCell(null);
+
+    if (bootstrap === 'demo-born-empty') {
+      setTab('孕期时光');
+      setActiveId('3x3-c');
+      setCellPhotos({});
+      setViewMode('edit');
+      return;
+    }
+
+    if (bootstrap === 'demo-born-progress' || bootstrap === 'demo-fetus-progress') {
+      const fill = {};
+      for (let i = 0; i < 6; i += 1) {
+        fill[i] = PREVIEW_PHOTOS[i % PREVIEW_PHOTOS.length];
+      }
+      setTab('孕期时光');
+      setActiveId('3x3-c');
+      setCellPhotos(fill);
+      setViewMode('edit');
+    }
   }, [bootstrap]);
 
   const openAlbumPicker = () => {
@@ -1145,6 +1851,7 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
   // sugSrc 为 null → 循环下一张（点击"换图"）
   // idx 有值但 sugSrc 为 undefined → 已填格子点击，循环下一张
   const replaceCell = (idx, sugSrc) => {
+    if (isPartialMemorialDemo && idx >= 6) return;
     if (sugSrc !== null && sugSrc !== undefined) {
       setCellPhotos((prev) => ({ ...prev, [idx]: sugSrc }));
       return;
@@ -1165,6 +1872,16 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
   };
 
   const previewPhotos = Array.from({ length: 9 }, (_, i) => cellPhotos[i] ?? null);
+
+  /** 入口3 · 顶部缩略九宫与进度数字（前两行与用户填格对齐） */
+  const progressMiniSixSources = Array.from({ length: 6 }, (_, i) => (
+    cellPhotos[i] ?? PREVIEW_PHOTOS[i % PREVIEW_PHOTOS.length]
+  ));
+  const progressEditableFilledCount = [0, 1, 2, 3, 4, 5].reduce(
+    (n, i) => (cellPhotos[i] ? n + 1 : n),
+    0,
+  );
+  const progressPctDisp = Math.min(100, Math.round((progressEditableFilledCount / 9) * 100));
 
   const dimMap = {
     '1:1': { w: 240, h: 240 },
@@ -1264,13 +1981,46 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
           style={{
             flex: 1, minHeight: 0, overflowY: 'auto',
             background: `radial-gradient(ellipse at 50% 0%, ${C.blush} 0%, ${C.cream} 60%, ${C.paper} 100%)`,
-            display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
             padding: '14px 14px 10px',
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setViewMode('layout'); }}
         >
-          {/* 精致边框卡片 */}
-          <div style={{
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+            {isPartialMemorialDemo && (
+              <div
+                style={{
+                  width: '100%',
+                  flexShrink: 0,
+                  borderRadius: 12,
+                  background: '#fff',
+                  border: '0.5px solid rgba(139,115,85,0.12)',
+                  boxShadow: '0 4px 18px rgba(80,35,48,0.08)',
+                  marginBottom: 12,
+                  overflow: 'hidden',
+                }}
+              >
+                <MemorialStoryRingHeader
+                  pct={progressPctDisp}
+                  total={9}
+                  collected={progressEditableFilledCount}
+                  babyName="豆豆"
+                  firstSixSrc={progressMiniSixSources}
+                  fetusNineMiniLuxury={useFetusLuxuryLocks}
+                  onPreviewTap={(e) => {
+                    e.stopPropagation();
+                    setFinishedPreviewOpen(true);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* 精致边框卡片 · 九宫格拼图 */}
+          <div
+            ref={puzzleSectionRef}
+            style={{
             width: '100%', flexShrink: 0,
             background: '#fffaf6',
             border: '1.5px solid #8b7355',
@@ -1281,6 +2031,34 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
               '0 10px 32px rgba(80,30,40,0.18)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
+            {isBornEmptyDemo && (
+              <div style={{
+                flexShrink: 0,
+                padding: '12px 14px',
+                borderBottom: '1px solid rgba(139,115,85,0.14)',
+                background: 'rgba(255,245,249,0.65)',
+              }}
+              >
+                <div style={{
+                  fontSize: 13, fontWeight: 500, color: C.ink,
+                  lineHeight: 1.43, marginBottom: 8,
+                  fontFamily: FONT_SANS,
+                }}
+                >
+                  从一张照片开始，把这段时光一点点拼完整
+                </div>
+                <div style={{
+                  fontSize: 11, color: C.mute, lineHeight: 1.45,
+                }}
+                >
+                  点任意格子上的「＋」，从相册上传第一张。
+                  <span style={{ display: 'block', marginTop: 4 }}>
+                    先从 B 超、胎心照或与孕期有关的纪念照入手也可以～
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* 照片网格 */}
             <div style={{ aspectRatio: `${dim.w}/${dim.h}`, width: '100%' }}>
               <LayoutPreview
@@ -1289,8 +2067,12 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
                 photos={previewPhotos}
               onCellTap={(idx, src) => replaceCell(idx, src)}
               onPickPhoto={(idx) => setPickerCell(idx)}
-              editable={true}
-              inviteAlbumOnEmpty={inviteAlbumOnEmpty && isEdit}
+              editable
+              inviteAlbumOnEmpty={isBornEmptyDemo}
+              emptyInviteBackdropDiagram={isBornEmptyDemo}
+              timeLockedSlotIndices={isPartialMemorialDemo ? [6, 7] : []}
+              birthAnticipationSlotIndex={isPartialMemorialDemo ? 8 : null}
+              useFetusMilestonePlaceholders={useFetusLuxuryLocks}
               />
             </div>
 
@@ -1317,6 +2099,7 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
                 <span>HEIGHT · 50CM</span>
               </div>
             </div>
+          </div>
           </div>
         </div>
       )}
@@ -1442,6 +2225,10 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
             setPickerCell(null);
           }}
         />
+      )}
+
+      {finishedPreviewOpen && (
+        <FinishedProductPreviewOverlay onClose={() => setFinishedPreviewOpen(false)} />
       )}
     </div>
   );
@@ -1966,11 +2753,13 @@ export default function App() {
   const [savedCard, setSavedCard] = useState(null);
   /** 成长纪念卡返回时要去往的上一页（首页引导 / 个人中心等） */
   const [homeReturnScreen, setHomeReturnScreen] = useState('meiyou');
+  /** 个人中心：已出生(`baby`) / 胎宝宝(`fetus`) 两套界面 */
+  const [babyProfileVariant, setBabyProfileVariant] = useState(/** @type {'baby' | 'fetus'} */ ('baby'));
 
   /** key 递增以强制重装模板页；bootstrap 参见 LayoutPickerPage */
   const [layoutSession, setLayoutSession] = useState(() => ({
     key: 0,
-    /** @type {null | 'demo-edit' | 'demo-edit-last3-empty'} */
+    /** @type {null | 'demo-born-empty' | 'demo-born-progress' | 'demo-fetus-progress'} */
     bootstrap: null,
     backTarget: /** @type {'home' | 'meiyou'} */ ('home'),
   }));
@@ -2006,19 +2795,26 @@ export default function App() {
         )}
         {screen === 'meiyou' && (
           <MeiyouHomePage
-            onOpenBabyProfile={() => setScreen('babyProfile')}
+            onOpenBabyProfile={(which) => {
+              setBabyProfileVariant(which === 'fetus' ? 'fetus' : 'baby');
+              setScreen('babyProfile');
+            }}
             onTapTryNow={() => {
               setHomeReturnScreen('meiyou');
-              goToLayoutPicker({ backTarget: 'meiyou', bootstrap: 'demo-edit-last3-empty' });
+              goToLayoutPicker({ backTarget: 'meiyou', bootstrap: 'demo-born-empty' });
             }}
-            onTapFamilyGuide={() => {
+            onTapFamilyGuide={(tab) => {
               setHomeReturnScreen('meiyou');
-              goToLayoutPicker({ backTarget: 'meiyou', bootstrap: 'demo-edit' });
+              goToLayoutPicker({
+                backTarget: 'meiyou',
+                bootstrap: tab === 'fetus' ? 'demo-fetus-progress' : 'demo-born-progress',
+              });
             }}
           />
         )}
         {screen === 'babyProfile' && (
           <MeiyouBabyProfilePage
+            variant={babyProfileVariant}
             onBack={() => setScreen('meiyou')}
             onGoGrowthCard={() => openGrowthCardFrom('babyProfile')}
           />
