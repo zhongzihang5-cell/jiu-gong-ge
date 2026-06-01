@@ -299,7 +299,7 @@ export function MemorialStoryRingHeader({
   );
 }
 
-const FETUS_TIMELINE_LABELS = ['5', '8', '12', '16', '20', '24', '28', '32', '宝宝出生'];
+const FETUS_TIMELINE_LABELS = ['5周', '8周', '12周', '16周', '20周', '24周', '28周', '32周', '宝宝出生'];
 
 /** 胎宝宝替换照片页 · 孕期留影横向时间轴（图2样式） */
 export function FetusPregnancyTimelineHeader({
@@ -311,6 +311,7 @@ export function FetusPregnancyTimelineHeader({
   const cSafe = Math.min(Math.max(0, collected), total);
   const currentIndex = cSafe < total ? cSafe : total - 1;
   const lineRatio = total > 1 ? cSafe / (total - 1) : 0;
+  const pct = Math.round((cSafe / total) * 100);
 
   return (
     <div style={{
@@ -335,7 +336,8 @@ export function FetusPregnancyTimelineHeader({
           whiteSpace: 'nowrap',
         }}
         >
-          孕期留影 · {cSafe} / {total}
+          孕期留影 ·{' '}
+          <span style={{ color: MY.brand }}>{pct}%</span>
         </div>
         <button
           type="button"
@@ -445,7 +447,7 @@ export function FetusPregnancyTimelineHeader({
                   lineHeight: 1.2,
                   textAlign: 'center',
                   whiteSpace: isLast ? 'normal' : 'nowrap',
-                  maxWidth: isLast ? 42 : 24,
+                  maxWidth: isLast ? 42 : 30,
                 }}
                 >
                   {label}
