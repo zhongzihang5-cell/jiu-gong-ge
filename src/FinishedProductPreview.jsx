@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ScatterGridPolaroid } from './ScatterGridPolaroid';
 import { MY, FONT } from './meiyou-theme';
 
@@ -15,7 +15,7 @@ const base = typeof import.meta !== 'undefined' && import.meta.env
 const imgUrl = (p) => (p.startsWith('/') ? p : `${base}${p}`);
 
 /** 3×3 拍立得小格 · 与设计稿手写脚标风格一致 */
-function PreviewPolaroidNine({ captions }) {
+function PreviewPolaroidNine({ captions, compact = false }) {
   const list = captions.length >= 9
     ? captions.slice(0, 9)
     : [...captions, ...Array.from({ length: 9 - captions.length }, (_, i) => `瞬间 ${i + 1}`)];
@@ -23,9 +23,10 @@ function PreviewPolaroidNine({ captions }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: 6,
-      padding: '10px 10px 12px',
+      gap: compact ? 4 : 6,
+      padding: compact ? '6px 6px 8px' : '10px 10px 12px',
       boxSizing: 'border-box',
+      width: '100%',
     }}
     >
       {list.map((cap, i) => (
@@ -33,12 +34,9 @@ function PreviewPolaroidNine({ captions }) {
           key={i}
           style={{
             background: '#fff',
-            padding: '4px 4px 6px',
+            padding: compact ? '2px 2px 4px' : '4px 4px 6px',
             borderRadius: 3,
-            boxShadow:
-              i === 4
-                ? '0 3px 10px rgba(255,91,138,0.18), 0 1px 4px rgba(60,35,42,0.08)'
-                : '0 2px 6px rgba(60,35,42,0.06)',
+            boxShadow: '0 1px 4px rgba(60,35,42,0.06)',
           }}
         >
           <div style={{
@@ -59,68 +57,322 @@ function PreviewPolaroidNine({ captions }) {
               }}
             />
           </div>
-          <div style={{
-            fontFamily: FONT_SERIF,
-            fontSize: 7.5,
-            fontStyle: 'italic',
-            color: MY.textSub,
-            marginTop: 4,
-            lineHeight: 1.25,
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-          >
-            {cap}
-          </div>
+          {compact ? null : (
+            <div style={{
+              fontFamily: FONT_SERIF,
+              fontSize: 7.5,
+              fontStyle: 'italic',
+              color: MY.textSub,
+              marginTop: 4,
+              lineHeight: 1.25,
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+            >
+              {cap}
+            </div>
+          )}
         </div>
       ))}
     </div>
   );
 }
 
-const CAROUSEL_SAMPLES = [
+function MiniPhoto({ srcIndex, style }) {
+  return (
+    <img
+      src={imgUrl(PREVIEW_SLOTS[srcIndex % PREVIEW_SLOTS.length])}
+      alt=""
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        display: 'block',
+        ...style,
+      }}
+    />
+  );
+}
+
+/** 双列流卡片内的模板缩略示意 */
+function TemplatePreviewThumb({ kind, captions }) {
+  const wrap = (children) => (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      background: '#fbf6f3',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+    }}
+    >
+      {children}
+    </div>
+  );
+
+  if (kind === 'scatter') {
+    return wrap(
+      <ScatterGridPolaroid
+        active={false}
+        scale={0.52}
+        dashedBorderColor="rgba(255,91,138,0.28)"
+        templateBg="#fff8fa"
+        organizedHoldMs={5200}
+        scatterDelayMs={900}
+      />
+    );
+  }
+
+  if (kind === 'grid') {
+    return wrap(<PreviewPolaroidNine captions={captions} compact />);
+  }
+
+  if (kind === 'cols4') {
+    return wrap(
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 3,
+        width: '92%',
+        height: '88%',
+      }}
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={{ borderRadius: 2, overflow: 'hidden', background: '#eee' }}>
+            <MiniPhoto srcIndex={i + 2} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (kind === 'big1') {
+    return wrap(
+      <div style={{
+        display: 'grid',
+        gridTemplateRows: '3fr 2fr',
+        gap: 3,
+        width: '92%',
+        height: '88%',
+      }}
+      >
+        <div style={{ borderRadius: 2, overflow: 'hidden' }}>
+          <MiniPhoto srcIndex={0} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, minHeight: 0 }}>
+          <div style={{ borderRadius: 2, overflow: 'hidden' }}><MiniPhoto srcIndex={1} /></div>
+          <div style={{ borderRadius: 2, overflow: 'hidden' }}><MiniPhoto srcIndex={2} /></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === 'grid4') {
+    return wrap(
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gridTemplateRows: '1fr 1fr',
+        gap: 3,
+        width: '86%',
+        aspectRatio: '1 / 1',
+      }}
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={{ borderRadius: 2, overflow: 'hidden' }}>
+            <MiniPhoto srcIndex={i + 3} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (kind === 'v3') {
+    return wrap(
+      <div style={{
+        display: 'grid',
+        gridTemplateRows: 'repeat(3, 1fr)',
+        gap: 3,
+        width: '72%',
+        height: '90%',
+      }}
+      >
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{ borderRadius: 2, overflow: 'hidden' }}>
+            <MiniPhoto srcIndex={i + 4} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return wrap(<PreviewPolaroidNine captions={captions ?? []} compact />);
+}
+
+/** 成品预览 · 各模板双列流介绍 */
+const TEMPLATE_SHOWCASE = [
   {
-    tag: '满月日记',
-    subLine: '9 张小瞬间 · 拼成第一份纪念卡',
+    id: 'scatter',
+    name: '散落拼贴',
+    theme: '通用',
+    cells: 9,
+    ratio: '1:1',
+    desc: '相册里的零碎瞬间，自动归位成完整故事',
     kind: 'scatter',
+    previewH: 168,
   },
   {
-    tag: '孕期旅程',
-    subLine: '里程碑九宫格 · 一天一天更靠近 TA',
+    id: '3x3-c',
+    name: '九宫格·文案',
+    theme: '孕期时光',
+    cells: 9,
+    ratio: '1:1',
+    desc: '孕周 milestone 标注，一天一天更靠近 TA',
     kind: 'grid',
     captions: ['验孕', '胎心初照', '囤货角', 'B 超剪影', '孕肚合拍', '水果周', '准爸留影', '产检日', '足月倒数'],
+    previewH: 152,
   },
   {
-    tag: '散落在相册的日常',
-    subLine: '把零碎照片拼成一起看的故事',
-    kind: 'scatter',
+    id: 'cols4-c',
+    name: '四联竖栏·文案',
+    theme: '孕期时光',
+    cells: 4,
+    ratio: '2:3',
+    desc: '纵向四段旅程，适合记录连续变化',
+    kind: 'cols4',
+    previewH: 184,
   },
   {
-    tag: '百日礼记',
-    subLine: '100 天里的哈欠与大笑',
+    id: 'big1-c',
+    name: '主图·文案',
+    theme: '宝宝成长',
+    cells: 3,
+    ratio: '4:3',
+    desc: '一张主图定格高光，其余补充细节',
+    kind: 'big1',
+    previewH: 148,
+  },
+  {
+    id: '2x2',
+    name: '经典四宫格',
+    theme: '宝宝成长',
+    cells: 4,
+    ratio: '1:1',
+    desc: '四季四帧，版面干净、重点清晰',
+    kind: 'grid4',
+    previewH: 132,
+  },
+  {
+    id: 'v3-c',
+    name: '竖排·文案',
+    theme: '宝宝成长',
+    cells: 3,
+    ratio: '3:4',
+    desc: '竖向三联对比，成长变化一目了然',
+    kind: 'v3',
+    previewH: 176,
+  },
+  {
+    id: 'rows3-c',
+    name: '三排·文案',
+    theme: '孕期时光',
+    cells: 3,
+    ratio: '3:4',
+    desc: '横向三段时间线，适合阶段回顾',
+    kind: 'v3',
+    previewH: 160,
+  },
+  {
+    id: 'h3-c',
+    name: '横排·文案',
+    theme: '宝宝成长',
+    cells: 3,
+    ratio: '3:2',
+    desc: '宽屏横排三联，分享图更舒展',
     kind: 'grid',
-    captions: ['第 7 天', '睡姿', '第 14 天', '抬头练习', '洗澡时间', '抓握', '满月', '百天', '全家合照'],
+    captions: ['出生第 1 天', '第 7 天', '满月', '百天', '半岁', '9 个月', '周岁', '学步', '全家福'],
+    previewH: 148,
   },
 ];
 
-const SCROLL_MS = 4800;
+function TemplateFlowCard({ item }) {
+  return (
+    <article style={{
+      background: MY.white,
+      borderRadius: 12,
+      overflow: 'hidden',
+      border: `0.5px solid rgba(0,0,0,0.06)`,
+      boxShadow: '0 4px 16px rgba(80,35,48,0.06)',
+      display: 'flex',
+      flexDirection: 'column',
+    }}
+    >
+      <div style={{
+        height: item.previewH,
+        flexShrink: 0,
+        borderBottom: `0.5px solid ${MY.line}`,
+      }}
+      >
+        <TemplatePreviewThumb kind={item.kind} captions={item.captions} />
+      </div>
+      <div style={{ padding: '10px 10px 12px' }}>
+        <div style={{
+          display: 'inline-block',
+          fontSize: 10,
+          fontWeight: 500,
+          color: MY.brand,
+          background: 'rgba(255,77,136,0.08)',
+          padding: '2px 8px',
+          borderRadius: 4,
+          marginBottom: 6,
+          lineHeight: 1.4,
+        }}
+        >
+          {item.theme}
+        </div>
+        <div style={{
+          fontFamily: FONT_SERIF,
+          fontSize: 14,
+          fontWeight: 500,
+          color: MY.text,
+          lineHeight: 1.35,
+          marginBottom: 4,
+        }}
+        >
+          {item.name}
+        </div>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 400,
+          color: MY.textSub,
+          lineHeight: 1.45,
+          margin: '0 0 8px',
+        }}
+        >
+          {item.desc}
+        </p>
+        <div style={{
+          fontSize: 10,
+          color: MY.textSub,
+          opacity: 0.85,
+          letterSpacing: 0.2,
+        }}
+        >
+          {item.cells} 格 · {item.ratio}
+        </div>
+      </div>
+    </article>
+  );
+}
 
 /**
- * 替换照片流程内 · 成品案例轮播预览（独立全屏层，保留下层编辑状态）
+ * 替换照片流程内 · 成品模板双列流预览（独立全屏层，保留下层编辑状态）
  */
 export function FinishedProductPreviewOverlay({ onClose }) {
-  const [idx, setIdx] = useState(0);
-  const n = CAROUSEL_SAMPLES.length;
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setIdx((i) => (i + 1) % n);
-    }, SCROLL_MS);
-    return () => clearInterval(t);
-  }, [n]);
-
   return (
     <div style={{
       position: 'absolute',
@@ -136,10 +388,10 @@ export function FinishedProductPreviewOverlay({ onClose }) {
       fontFamily: FONT,
     }}
     >
-      {/* 顶栏 */}
+      {/* 顶栏 · 与替换照片等页一致 */}
       <div style={{
         flexShrink: 0,
-        padding: '52px 10px 6px',
+        padding: '52px 16px 10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -147,37 +399,43 @@ export function FinishedProductPreviewOverlay({ onClose }) {
       >
         <button
           type="button"
-          aria-label="关闭"
+          aria-label="返回"
           onClick={onClose}
           style={{
-            width: 40,
-            height: 40,
+            height: 36,
             border: 'none',
-            background: 'rgba(255,255,255,0.82)',
-            borderRadius: 12,
+            background: 'transparent',
             cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(80,35,48,0.08)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: MY.textSub,
+            gap: 6,
+            padding: '0 4px',
+            color: MY.text,
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" strokeWidth="2" stroke="currentColor" strokeLinecap="round">
-            <path d="M1 1l10 10M11 1L1 11" />
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+            <path
+              d="M8.5 1L1.5 8L8.5 15"
+              stroke="rgba(0,0,0,0.8)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
+          <span style={{ fontSize: 13, color: MY.textSub, fontWeight: 400 }}>返回</span>
         </button>
+
         <div style={{
-          marginRight: 40,
-          fontSize: 15,
-          fontWeight: 500,
-          color: MY.textSub,
-          letterSpacing: 0.4,
+          fontSize: 16,
+          fontWeight: 600,
+          color: MY.text,
+          letterSpacing: 0.2,
         }}
         >
           成品预览
         </div>
-        <div style={{ width: 40 }} />
+
+        <div style={{ width: 36 }} aria-hidden />
       </div>
 
       <div style={{
@@ -189,13 +447,12 @@ export function FinishedProductPreviewOverlay({ onClose }) {
       }}
       >
         <div style={{
-          padding: '8px 20px 16px',
+          padding: '8px 16px 12px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
         }}
         >
-          {/* 口碑条 */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -218,26 +475,22 @@ export function FinishedProductPreviewOverlay({ onClose }) {
             />
             <span style={{ fontSize: 12, fontWeight: 400, color: MY.text }}>
               <span style={{ color: MY.brand, fontWeight: 500 }}>12,886</span>
-              {' '}位妈妈已为宝宝生成纪念卡
+              {' '}位妈妈已为宝宝生成纪念拼图
             </span>
           </div>
 
-          {/* 主标题 */}
           <h1 style={{
-            margin: '22px 0 10px',
+            margin: '18px 0 8px',
             fontFamily: FONT_SERIF,
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: 500,
-            letterSpacing: 0.8,
+            letterSpacing: 0.6,
             lineHeight: 1.45,
             color: MY.text,
             textAlign: 'center',
           }}
           >
-            这 <span style={{ color: MY.brand, fontVariantNumeric: 'tabular-nums' }}>280</span> 天，
-            <br />
-            <span style={{ color: MY.brand }}>值得</span>
-            <span style={{ color: MY.text }}>好好珍藏</span>
+            多种模板，拼出你的故事
           </h1>
           <p style={{
             fontSize: 13,
@@ -246,214 +499,31 @@ export function FinishedProductPreviewOverlay({ onClose }) {
             lineHeight: 1.5,
             textAlign: 'center',
             maxWidth: 300,
-            margin: '0 0 8px',
+            margin: 0,
           }}
           >
-            看看其他家庭完成的纪念卡，
-            {' '}你也会想要一张属于自己的拼图故事。
+            下滑浏览不同版式成品，选最适合你相册的一种。
           </p>
         </div>
 
-        {/* 轮播区 */}
+        {/* 双列模板流 */}
         <div style={{
-          height: 320,
-          position: 'relative',
-          perspective: 1100,
-          marginTop: 4,
+          columnCount: 2,
+          columnGap: 12,
+          padding: '4px 12px 8px',
         }}
         >
-          {/* 左右切换 */}
-          <button
-            type="button"
-            aria-label="上一张"
-            onClick={() => setIdx((i) => (i - 1 + n) % n)}
-            style={{
-              position: 'absolute',
-              left: 6,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 32,
-              height: 72,
-              zIndex: 20,
-              border: 'none',
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.55)',
-              color: MY.textSub,
-              cursor: 'pointer',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            aria-label="下一张"
-            onClick={() => setIdx((i) => (i + 1) % n)}
-            style={{
-              position: 'absolute',
-              right: 6,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 32,
-              height: 72,
-              zIndex: 20,
-              border: 'none',
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.55)',
-              color: MY.textSub,
-              cursor: 'pointer',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            ›
-          </button>
-
-          {CAROUSEL_SAMPLES.map((s, i) => {
-            const offset = ((i - idx) + n) % n;
-            const show = offset <= 2 || offset === n - 1;
-            const isCenter = offset === 0;
-            const isLeft = offset === n - 1;
-            const isRight = offset === 1;
-
-            let dx = 0; let rot = 0; let sc = 0.74; let z = 1; let op = 0.52;
-            if (isCenter) {
-              dx = 0; rot = -1.8; sc = 1; z = 8; op = 1;
-            } else if (isLeft) {
-              dx = -86; rot = -9; sc = 0.78; z = 5; op = 0.55;
-            } else if (isRight) {
-              dx = 86; rot = 9; sc = 0.78; z = 5; op = 0.55;
-            } else if (offset === 2) {
-              dx = 132; rot = 16; sc = 0.64; z = 2; op = 0.28;
-            }
-            if (!show) return null;
-
-            const activeScatter = isCenter && s.kind === 'scatter';
-
-            return (
-              <button
-                type="button"
-                key={s.tag}
-                onClick={() => setIdx(i)}
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: 10,
-                  width: 200,
-                  minHeight: 276,
-                  marginLeft: -100,
-                  transform: `translateX(${dx}px) rotate(${rot}deg) scale(${sc})`,
-                  transition: 'transform 0.62s cubic-bezier(.2,.8,.22,1), opacity 0.45s',
-                  zIndex: z,
-                  opacity: op,
-                  cursor: 'pointer',
-                  padding: '10px 10px 14px',
-                  border: 'none',
-                  borderRadius: 10,
-                  background: MY.white,
-                  boxShadow: isCenter
-                    ? `0 20px 48px rgba(180,110,138,0.22), ${'0 2px 10px rgba(80,35,42,0.08)'}`
-                    : '0 10px 28px rgba(80,35,42,0.12)',
-                  textAlign: 'left',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'stretch',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <div style={{
-                  flex: 1,
-                  minHeight: 198,
-                  borderRadius: 6,
-                  overflow: 'hidden',
-                  background: '#fbf6f3',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                >
-                  {s.kind === 'scatter' ? (
-                    <div style={{
-                      transform: 'scale(0.97)',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      width: '100%',
-                      overflow: 'hidden',
-                    }}
-                    >
-                      <ScatterGridPolaroid
-                        active={activeScatter}
-                        scale={0.98}
-                        dashedBorderColor="rgba(255,91,138,0.28)"
-                        templateBg="#fff8fa"
-                        organizedHoldMs={5200}
-                        scatterDelayMs={900}
-                      />
-                    </div>
-                  ) : (
-                    <PreviewPolaroidNine captions={s.captions} />
-                  )}
-                </div>
-                <div style={{
-                  marginTop: 10,
-                  padding: '0 4px',
-                }}
-                >
-                  <div style={{
-                    fontFamily: FONT_SERIF,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: MY.text,
-                    letterSpacing: 0.4,
-                    marginBottom: 3,
-                  }}
-                  >
-                    {s.tag}
-                  </div>
-                  <div style={{
-                    fontSize: 11,
-                    color: MY.textSub,
-                    lineHeight: 1.4,
-                  }}
-                  >
-                    {s.subLine}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 分页 */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 8,
-          marginTop: 18,
-          paddingBottom: 8,
-        }}
-        >
-          {CAROUSEL_SAMPLES.map((s, i) => (
-            <button
-              type="button"
-              key={`dot-${s.tag}`}
-              aria-label={`第 ${i + 1} 张`}
-              onClick={() => setIdx(i)}
+          {TEMPLATE_SHOWCASE.map((item) => (
+            <div
+              key={item.id}
               style={{
-                width: i === idx ? 22 : 6,
-                height: 6,
-                borderRadius: 3,
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                transition: 'width 0.25s cubic-bezier(.2,.8,.2,1)',
-                background:
-                  i === idx
-                    ? MY.brand
-                    : 'rgba(255,77,136,0.22)',
+                breakInside: 'avoid',
+                WebkitColumnBreakInside: 'avoid',
+                marginBottom: 12,
               }}
-            />
+            >
+              <TemplateFlowCard item={item} />
+            </div>
           ))}
         </div>
       </div>

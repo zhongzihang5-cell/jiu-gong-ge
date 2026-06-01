@@ -4,10 +4,11 @@ import { MeiyouHomePage } from './MeiyouHomePage';
 import { MeiyouBabyProfilePage } from './MeiyouBabyProfilePage';
 import { ScatterGridPolaroid } from './ScatterGridPolaroid';
 import { FinishedProductPreviewOverlay } from './FinishedProductPreview';
+import { MemorialStoryRingHeader, FetusPregnancyTimelineHeader } from './MemorialStoryRingHeader';
 
 // ── 样本数据 ──────────────────────────────────────────────────
 const SAMPLES = [
-  { kind: 'demo', tag: '豆豆的成长纪念卡' },
+  { kind: 'demo', tag: '豆豆的成长纪念拼图' },
   { src: 'assets/sample1.png', tag: '满月日记', author: 'SillyLolo', likes: '2.3k' },
   { src: 'assets/sample2.png', tag: '宝宝 30 天', author: '穗の豆', likes: '942' },
   { src: 'assets/sample3.png', tag: '出生第一周', author: 'Jugwss', likes: '1.5k' },
@@ -268,7 +269,7 @@ function EditorPage({ onBack, onDone }) {
           <button onClick={onDone} style={{
             padding: '8px 14px', borderRadius: 999, border: 0,
             background: C.pink, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}>生成纪念卡</button>
+          }}>生成纪念拼图</button>
         </div>
 
         {/* 模板标题块 */}
@@ -1459,269 +1460,8 @@ function LayoutPreview({
   }
 }
 
-/** 替换照片页顶部 · 3×3 缩略占位（入口3：已填 / 待定 / 「＋」） */
-function BirthProgressNineMini({
-  gap = 1,
-  /** 前六格展示的图地址；不传则用样本图占位 */
-  firstSixSrc,
-  /** 胎宝宝 demo：后三格用米色里程碑缩略观感 */
-  fetusNineMiniLuxury = false,
-}) {
-  const thumbs = PREVIEW_PHOTOS;
-  const row = firstSixSrc
-    ?? [0, 1, 2, 3, 4, 5].map((i) => thumbs[i % thumbs.length]);
-
-  const cellImg = (i) => (
-    <img src={row[i]} alt="" style={{
-      width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-    }} />
-  );
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gridTemplateRows: 'repeat(3, 1fr)',
-      gap,
-      width: '100%', height: '100%',
-      background: '#fff',
-      boxSizing: 'border-box',
-    }}
-    >
-      {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} style={{ minWidth: 0, minHeight: 0, overflow: 'hidden' }}>{cellImg(i)}</div>)}
-      {fetusNineMiniLuxury ? (
-        <>
-          <div style={{
-            minWidth: 0,
-            minHeight: 0,
-            overflow: 'hidden',
-            background: FET_ANT.bgCell,
-            position: 'relative',
-          }}
-          >
-            <img
-              src={FETUS_LUXURY_MILESTONE_SLOT[6].previewSrc}
-              alt=""
-              style={{
-                width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                opacity: 0.38, filter: 'grayscale(0.35)',
-              }}
-            />
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(180deg, rgba(253,245,232,0.5) 0%, rgba(253,245,232,0.78) 100%)',
-            }} />
-          </div>
-          <div style={{
-            minWidth: 0,
-            minHeight: 0,
-            overflow: 'hidden',
-            background: FET_ANT.bgCell,
-            position: 'relative',
-          }}
-          >
-            <img
-              src={FETUS_LUXURY_MILESTONE_SLOT[7].previewSrc}
-              alt=""
-              style={{
-                width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                opacity: 0.38, filter: 'grayscale(0.35)',
-              }}
-            />
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(180deg, rgba(253,245,232,0.5) 0%, rgba(253,245,232,0.78) 100%)',
-            }} />
-          </div>
-          <div style={{
-            minWidth: 0, minHeight: 0,
-            background: '#ede4d6',
-            border: `0.5px solid ${FET_ANT.goldGlow}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative', overflow: 'hidden',
-          }}
-          >
-            <img
-              src={FETUS_BIRTH_LUXURY.haloSrc}
-              alt=""
-              style={{
-                position: 'absolute', inset: 0,
-                width: '100%', height: '100%', objectFit: 'cover', opacity: 0.22,
-                filter: 'sepia(0.45)', display: 'block',
-              }}
-            />
-            <span style={{
-              position: 'relative', zIndex: 1,
-              fontSize: 10, fontWeight: 500, color: FET_ANT.goldDeep, lineHeight: 1,
-              fontFamily: FONT_SERIF,
-            }} aria-hidden>{'\u2726'}</span>
-          </div>
-        </>
-      ) : (
-        <>
-          <div style={{
-            background: '#fff3f7',
-            border: '0.5px dashed rgba(255,91,138,0.28)',
-            minWidth: 0, minHeight: 0,
-          }} />
-          <div style={{
-            background: '#fff3f7',
-            border: '0.5px dashed rgba(255,91,138,0.28)',
-            minWidth: 0, minHeight: 0,
-          }} />
-          <div style={{
-            background: 'linear-gradient(180deg,#fffceb 0%, #fff5d9 100%)',
-            border: '0.5px solid rgba(212,175,116,0.35)',
-            minWidth: 0, minHeight: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-          >
-            <span style={{ fontSize: 9, fontWeight: 400, color: '#c9a227', lineHeight: 1 }} aria-hidden="true">＋</span>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-/** 圆环进度：入口3顶部独立摘要卡（不与下方拼图边框合二为一） */
-function MemorialStoryRingHeader({
-  pct = 67,
-  total = 9,
-  collected = 6,
-  babyName = '豆豆',
-  firstSixSrc,
-  onPreviewTap,
-  fetusNineMiniLuxury = false,
-}) {
-  const ringR = 34;
-  const ringC = 2 * Math.PI * ringR;
-  const pctClamped = Math.max(0, Math.min(100, pct)) / 100;
-  const dash = ringC * pctClamped;
-
-  const wrap = 76;
-  const cx = wrap / 2;
-  const cSafe = Math.min(collected, total);
-  const rest = Math.max(0, total - cSafe);
-
-  return (
-    <div style={{
-      flexShrink: 0,
-      padding: '14px 14px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-    }}
-    >
-      <div
-        aria-hidden
-        style={{
-          flexShrink: 0,
-          width: wrap,
-          height: wrap,
-          position: 'relative',
-        }}
-      >
-        <svg
-          width={wrap}
-          height={wrap}
-          viewBox={`0 0 ${wrap} ${wrap}`}
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            transform: 'rotate(-88deg)',
-            transformOrigin: '50% 50%',
-          }}
-        >
-          <circle
-            cx={cx}
-            cy={cx}
-            r={ringR}
-            fill="none"
-            stroke="rgba(255,91,138,0.12)"
-            strokeWidth="4"
-          />
-          <circle
-            cx={cx}
-            cy={cx}
-            r={ringR}
-            fill="none"
-            stroke={C.pink}
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${ringC}`}
-          />
-        </svg>
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 50,
-          height: 50,
-          borderRadius: '50%',
-          overflow: 'hidden',
-          border: '0.5px solid rgba(255,255,255,0.9)',
-          boxShadow: '0 1px 4px rgba(80,40,50,0.08)',
-          boxSizing: 'border-box',
-        }}
-        >
-          <BirthProgressNineMini gap={1} firstSixSrc={firstSixSrc} fetusNineMiniLuxury={fetusNineMiniLuxury} />
-        </div>
-      </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 14,
-          fontWeight: 500,
-          color: C.ink,
-          marginBottom: 6,
-          lineHeight: 1.35,
-          fontFamily: FONT_SANS,
-        }}
-        >
-          {babyName}的故事 · 进行到{' '}
-          <span style={{ color: C.pink }}>{pct}%</span>
-        </div>
-        <div style={{
-          fontSize: 11,
-          color: C.mute,
-          lineHeight: 1.43,
-          marginBottom: 10,
-          fontFamily: FONT_SANS,
-        }}
-        >
-          已完成{' '}
-          <span style={{ color: C.pink, fontWeight: 500 }}>
-            {cSafe}/{total}
-          </span>
-          {' '}· 再填 {rest} 格即可生成
-        </div>
-        <button
-          type="button"
-          onClick={onPreviewTap}
-          style={{
-            background: '#fff5f9',
-            padding: '6px 14px',
-            borderRadius: 80,
-            fontSize: 12,
-            fontWeight: 500,
-            color: C.pink,
-            cursor: onPreviewTap ? 'pointer' : 'default',
-            letterSpacing: 0.2,
-            border: `0.5px solid rgba(255,91,138,0.18)`,
-            fontFamily: FONT_SANS,
-          }}
-        >
-          成品预览
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── 模板选择页 ────────────────────────────────────────────────
-function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
+function LayoutPickerPage({ onBack, onConfirm, bootstrap = null, onOpenWorks = null }) {
   const [tab, setTab] = useState('孕期时光');
   const [activeId, setActiveId] = useState('3x3');
 
@@ -1772,7 +1512,7 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
   const puzzleSectionRef = useRef(null);
   const [finishedPreviewOpen, setFinishedPreviewOpen] = useState(false);
 
-  /** 美柚入口2 · 九宫格全无真实照片；入口3 · 部分已填 + 时间锁格子 */
+  /** 美柚入口2 · 前两格已填示例，其余「＋」+ 弱兜底图 + 顶部引导 */
   const isBornEmptyDemo = bootstrap === 'demo-born-empty';
   const isPartialMemorialDemo =
     bootstrap === 'demo-born-progress' || bootstrap === 'demo-fetus-progress';
@@ -1782,9 +1522,12 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
     setPickerCell(null);
 
     if (bootstrap === 'demo-born-empty') {
+      const fill = {};
+      fill[0] = PREVIEW_PHOTOS[0];
+      fill[1] = PREVIEW_PHOTOS[1];
       setTab('孕期时光');
       setActiveId('3x3-c');
-      setCellPhotos({});
+      setCellPhotos(fill);
       setViewMode('edit');
       return;
     }
@@ -1836,7 +1579,17 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
     });
   };
 
+  const previewPhotos = Array.from({ length: 9 }, (_, i) => cellPhotos[i] ?? null);
+
+  /** 替换照片页 · 须全部填满的格（demo 入口3 的后三格为时间锁占位，不计入） */
+  const editRequiredSlotIndices = Array.from({ length: current.cells }, (_, i) => i)
+    .filter((i) => !(isPartialMemorialDemo && i >= 6));
+  const editAllRequiredFilled = editRequiredSlotIndices.every(
+    (i) => cellPhotos[i] != null && cellPhotos[i] !== '',
+  );
+
   const handleConfirm = () => {
+    if (!editAllRequiredFilled || useFetusLuxuryLocks) return;
     setFavorites((prev) => new Set([...prev, favKey(current)]));
     onConfirm({
       layoutId: current.id,
@@ -1871,8 +1624,6 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
     setCellPhotos({});
   };
 
-  const previewPhotos = Array.from({ length: 9 }, (_, i) => cellPhotos[i] ?? null);
-
   /** 入口3 · 顶部缩略九宫与进度数字（前两行与用户填格对齐） */
   const progressMiniSixSources = Array.from({ length: 6 }, (_, i) => (
     cellPhotos[i] ?? PREVIEW_PHOTOS[i % PREVIEW_PHOTOS.length]
@@ -1881,7 +1632,17 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
     (n, i) => (cellPhotos[i] ? n + 1 : n),
     0,
   );
-  const progressPctDisp = Math.min(100, Math.round((progressEditableFilledCount / 9) * 100));
+
+  const emptyDemoFilledCount = Array.from({ length: current.cells }, (_, i) => i).reduce(
+    (n, i) => (cellPhotos[i] ? n + 1 : n),
+    0,
+  );
+  const showProgressRing = isPartialMemorialDemo || isBornEmptyDemo;
+  const ringCollected = isBornEmptyDemo ? emptyDemoFilledCount : progressEditableFilledCount;
+  const ringPct = Math.min(100, Math.round((ringCollected / 9) * 100));
+  const ringNineSlots = isBornEmptyDemo
+    ? Array.from({ length: 9 }, (_, i) => cellPhotos[i] ?? null)
+    : null;
 
   const dimMap = {
     '1:1': { w: 240, h: 240 },
@@ -1896,6 +1657,9 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
   const isEdit = viewMode === 'edit';
   const isAlbum = viewMode === 'album';
   const captions = THEME_CAPTIONS[tab] || [];
+
+  /** 胎宝宝等待解锁页：后三格不可填，底部「完成」始终不可点 */
+  const editCtaDisabled = isEdit && (!editAllRequiredFilled || useFetusLuxuryLocks);
 
   return (
     <div style={{
@@ -1932,8 +1696,12 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
           {isEdit ? '替换照片' : '选择模板'}
         </div>
 
-        {/* 右：占位保持对称 */}
-        <div style={{ width: 36 }} />
+        {/* 右：编辑态 · 作品合集（四宫格 icon） */}
+        {isEdit && onOpenWorks ? (
+          <WorksIcon onClick={onOpenWorks} ariaLabel="作品合集" />
+        ) : (
+          <div style={{ width: 36 }} />
+        )}
       </div>
 
       {/* ══ LAYOUT 模式：小预览卡片 ══ */}
@@ -1989,7 +1757,7 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
           onClick={(e) => { if (e.target === e.currentTarget) setViewMode('layout'); }}
         >
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-            {isPartialMemorialDemo && (
+            {showProgressRing && (
               <div
                 style={{
                   width: '100%',
@@ -2002,18 +1770,30 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
                   overflow: 'hidden',
                 }}
               >
-                <MemorialStoryRingHeader
-                  pct={progressPctDisp}
-                  total={9}
-                  collected={progressEditableFilledCount}
-                  babyName="豆豆"
-                  firstSixSrc={progressMiniSixSources}
-                  fetusNineMiniLuxury={useFetusLuxuryLocks}
-                  onPreviewTap={(e) => {
-                    e.stopPropagation();
-                    setFinishedPreviewOpen(true);
-                  }}
-                />
+                {useFetusLuxuryLocks ? (
+                  <FetusPregnancyTimelineHeader
+                    collected={ringCollected}
+                    total={9}
+                    onPreviewTap={(e) => {
+                      e.stopPropagation();
+                      setFinishedPreviewOpen(true);
+                    }}
+                  />
+                ) : (
+                  <MemorialStoryRingHeader
+                    pct={ringPct}
+                    total={9}
+                    collected={ringCollected}
+                    babyName="豆豆"
+                    firstSixSrc={isBornEmptyDemo ? undefined : progressMiniSixSources}
+                    fetusNineMiniLuxury={useFetusLuxuryLocks}
+                    nineSlots={ringNineSlots}
+                    onPreviewTap={(e) => {
+                      e.stopPropagation();
+                      setFinishedPreviewOpen(true);
+                    }}
+                  />
+                )}
               </div>
             )}
 
@@ -2031,34 +1811,6 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
               '0 10px 32px rgba(80,30,40,0.18)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
-            {isBornEmptyDemo && (
-              <div style={{
-                flexShrink: 0,
-                padding: '12px 14px',
-                borderBottom: '1px solid rgba(139,115,85,0.14)',
-                background: 'rgba(255,245,249,0.65)',
-              }}
-              >
-                <div style={{
-                  fontSize: 13, fontWeight: 500, color: C.ink,
-                  lineHeight: 1.43, marginBottom: 8,
-                  fontFamily: FONT_SANS,
-                }}
-                >
-                  从一张照片开始，把这段时光一点点拼完整
-                </div>
-                <div style={{
-                  fontSize: 11, color: C.mute, lineHeight: 1.45,
-                }}
-                >
-                  点任意格子上的「＋」，从相册上传第一张。
-                  <span style={{ display: 'block', marginTop: 4 }}>
-                    先从 B 超、胎心照或与孕期有关的纪念照入手也可以～
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* 照片网格 */}
             <div style={{ aspectRatio: `${dim.w}/${dim.h}`, width: '100%' }}>
               <LayoutPreview
@@ -2180,16 +1932,23 @@ function LayoutPickerPage({ onBack, onConfirm, bootstrap = null }) {
       {/* ── 底部 CTA ── */}
       <div style={{ padding: '8px 16px 22px', flexShrink: 0, background: isEdit ? '#fff8f4' : C.paper }}>
         <button
+          type="button"
+          disabled={editCtaDisabled}
           onClick={isEdit ? handleConfirm : openAlbumPicker}
           style={{
             width: '100%', height: 50, borderRadius: 26, border: 0,
             background: `linear-gradient(135deg, #ff6e9c 0%, ${C.pink} 100%)`,
-            color: '#fff', fontSize: 16, fontWeight: 700,
-            letterSpacing: 1, cursor: 'pointer',
-            boxShadow: '0 8px 18px -6px rgba(255,91,138,0.55)',
+            color: '#fff', fontSize: 16, fontWeight: 500,
+            letterSpacing: 1,
+            cursor: editCtaDisabled ? 'not-allowed' : 'pointer',
+            opacity: editCtaDisabled ? 0.5 : 1,
+            boxShadow: editCtaDisabled
+              ? 'none'
+              : '0 8px 18px -6px rgba(255,91,138,0.55)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}>
-          {isEdit ? '完成，生成纪念卡' : '下一步'}
+          }}
+        >
+          {isEdit ? '完成，生成纪念拼图' : '下一步'}
         </button>
       </div>
 
@@ -2274,7 +2033,7 @@ function PuzzlePage({ onGenerate, onWorks, onNavigateBack }) {
               <span style={{
                 fontVariantNumeric: 'tabular-nums', color: C.pink, fontWeight: 600,
               }}>{counter.toLocaleString()}</span>
-              位妈妈已经为宝宝生成了成长纪念卡
+              位妈妈已经为宝宝生成了纪念拼图
             </span>
           </div>
 
@@ -2328,7 +2087,7 @@ function PuzzlePage({ onGenerate, onWorks, onNavigateBack }) {
             <div style={{
               fontFamily: FONT_SERIF, fontSize: 17, fontWeight: 700, color: C.ink,
               letterSpacing: 0.5,
-            }}>豆豆的专属成长纪念卡已经准备好了</div>
+            }}>豆豆的专属纪念拼图已经准备好了</div>
             <div style={{ fontSize: 12, color: C.ink2, marginTop: 4 }}>
               一份有意义的礼物，送给宝宝也送给自己
             </div>
@@ -2364,7 +2123,7 @@ function PuzzlePage({ onGenerate, onWorks, onNavigateBack }) {
                       <rect x="5" y="9" width="6" height="4.5" stroke={C.pink} strokeWidth="1.4" fill="#fff"/>
                     </svg>
                   ),
-                  k: '支持冲印', v: '可印成照片书',
+                  k: '支持冲印', v: '可印成实体相框',
                 },
                 {
                   icon: (
@@ -2419,7 +2178,7 @@ function PuzzlePage({ onGenerate, onWorks, onNavigateBack }) {
             <path d="M8.5 1L1.5 8L8.5 15" stroke={C.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <div style={{ fontSize: 16, fontWeight: 600, color: C.ink }}>成长纪念卡</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: C.ink }}>纪念拼图</div>
         <WorksIcon onClick={onWorks} />
       </div>
 
@@ -2462,9 +2221,9 @@ const CONFETTI_STYLE = `
 }`;
 
 // ── 我的作品图标（复用于首页和完成页）──────────────────────────
-function WorksIcon({ onClick }) {
+function WorksIcon({ onClick, ariaLabel = '我的作品' }) {
   return (
-    <button onClick={onClick} aria-label="我的作品" style={{
+    <button type="button" onClick={onClick} aria-label={ariaLabel} style={{
       width: 36, height: 36, border: 0, background: 'transparent',
       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
@@ -2506,7 +2265,7 @@ function ShareSheet({ onClose }) {
           <div style={{ width: 36, height: 4, borderRadius: 2, background: C.line }} />
         </div>
         <div style={{ fontSize: 15, fontWeight: 600, textAlign: 'center', padding: '8px 0 18px', color: C.ink }}>
-          分享纪念卡
+          分享纪念拼图
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 20 }}>
           {SHARE_APPS.map((app) => (
@@ -2610,12 +2369,12 @@ function CompletionPage({ card, onClose, onMakeAnother, onWorks }) {
         {/* 标题 */}
         <div style={{ marginTop: 16, textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <div style={{ fontFamily: FONT_SERIF, fontSize: 30, fontWeight: 700, color: C.ink, letterSpacing: 1 }}>
-            纪念卡已保存
+            纪念拼图已保存
           </div>
           <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>已自动保存至时间轴</div>
         </div>
 
-        {/* 纪念卡预览（与「替换照片」页同一 LayoutPreview 数据） */}
+        {/* 纪念拼图预览（与「替换照片」页同一 LayoutPreview 数据） */}
         <div style={{
           marginTop: 20, width: '100%', padding: '0 14px', boxSizing: 'border-box',
           position: 'relative', zIndex: 10,
@@ -2672,9 +2431,9 @@ function CompletionPage({ card, onClose, onMakeAnother, onWorks }) {
 
 // ── 我的作品页 ───────────────────────────────────────────────────
 const MOCK_WORKS = [
-  { id: 1, name: '豆豆的成长纪念卡', date: '2026.05.18', photos: [0,1,2,3,4,5,6,7,8] },
-  { id: 2, name: '豆豆的成长纪念卡', date: '2026.05.15', photos: [1,2,3,4,5,6,0,7,2] },
-  { id: 3, name: '豆豆的成长纪念卡', date: '2026.05.10', photos: [3,4,5,0,1,6,2,7,1] },
+  { id: 1, name: '豆豆的成长纪念拼图', date: '2026.05.18', photos: [0,1,2,3,4,5,6,7,8] },
+  { id: 2, name: '豆豆的成长纪念拼图', date: '2026.05.15', photos: [1,2,3,4,5,6,0,7,2] },
+  { id: 3, name: '豆豆的成长纪念拼图', date: '2026.05.10', photos: [3,4,5,0,1,6,2,7,1] },
 ];
 
 function WorksPage({ onBack }) {
@@ -2702,7 +2461,9 @@ function WorksPage({ onBack }) {
 
       {/* 作品列表 */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 32px' }}>
-        {MOCK_WORKS.map((work) => (
+        {MOCK_WORKS.map((work, index) => {
+          const isPrint = index === 0;
+          return (
           <div key={work.id} style={{
             display: 'flex', alignItems: 'center', gap: 14,
             padding: '14px 0', borderBottom: `0.5px solid ${C.line}`,
@@ -2725,18 +2486,25 @@ function WorksPage({ onBack }) {
             </div>
             {/* 信息 */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, fontFamily: FONT_SERIF }}>{work.name}</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: C.ink, fontFamily: FONT_SERIF }}>{work.name}</div>
               <div style={{ fontSize: 11, color: C.mute, marginTop: 4 }}>{work.date}</div>
             </div>
-            {/* 立即印制 */}
-            <button style={{
-              flexShrink: 0, height: 32, padding: '0 14px', borderRadius: 16,
-              border: 0, background: C.pink, color: '#fff',
-              fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}>立即印制</button>
+            <button
+              type="button"
+              style={{
+                flexShrink: 0, height: 32, padding: '0 14px', borderRadius: 16,
+                border: isPrint ? 0 : `1px solid rgba(79,124,174,0.45)`,
+                background: isPrint ? C.pink : '#f2f6fa',
+                color: isPrint ? '#fff' : '#4f7cae',
+                fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {isPrint ? '立即印制' : '立即查看'}
+            </button>
           </div>
-        ))}
+          );
+        })}
         {MOCK_WORKS.length === 0 && (
           <div style={{ textAlign: 'center', marginTop: 80, color: C.mute, fontSize: 14 }}>
             暂无作品，快去做一张吧 ✨
@@ -2751,10 +2519,12 @@ function WorksPage({ onBack }) {
 export default function App() {
   const [screen, setScreen] = useState('meiyou');
   const [savedCard, setSavedCard] = useState(null);
-  /** 成长纪念卡返回时要去往的上一页（首页引导 / 个人中心等） */
+  /** 纪念拼图返回时要去往的上一页（首页引导 / 个人中心等） */
   const [homeReturnScreen, setHomeReturnScreen] = useState('meiyou');
   /** 个人中心：已出生(`baby`) / 胎宝宝(`fetus`) 两套界面 */
   const [babyProfileVariant, setBabyProfileVariant] = useState(/** @type {'baby' | 'fetus'} */ ('baby'));
+  /** 作品合集返回页 */
+  const [worksBackScreen, setWorksBackScreen] = useState(/** @type {'home' | 'layout'} */ ('home'));
 
   /** key 递增以强制重装模板页；bootstrap 参见 LayoutPickerPage */
   const [layoutSession, setLayoutSession] = useState(() => ({
@@ -2773,7 +2543,7 @@ export default function App() {
     setScreen('layout');
   };
 
-  /** 着陆页「成长纪念卡」活动承接（仍为 Puzzle 首页） */
+  /** 着陆页「纪念拼图」活动承接（仍为 Puzzle 首页） */
   const openGrowthCardFrom = (fromScreen) => {
     setHomeReturnScreen(fromScreen);
     setScreen('home');
@@ -2789,7 +2559,10 @@ export default function App() {
         {screen === 'home' && (
           <PuzzlePage
             onGenerate={() => goToLayoutPicker({ backTarget: 'home' })}
-            onWorks={() => setScreen('works')}
+            onWorks={() => {
+              setWorksBackScreen('home');
+              setScreen('works');
+            }}
             onNavigateBack={() => setScreen(homeReturnScreen)}
           />
         )}
@@ -2799,15 +2572,21 @@ export default function App() {
               setBabyProfileVariant(which === 'fetus' ? 'fetus' : 'baby');
               setScreen('babyProfile');
             }}
-            onTapTryNow={() => {
+            onTapTryNow={(tab) => {
               setHomeReturnScreen('meiyou');
-              goToLayoutPicker({ backTarget: 'meiyou', bootstrap: 'demo-born-empty' });
+              goToLayoutPicker({
+                backTarget: 'meiyou',
+                // 胎宝宝：立即体验 → 里程碑锁定 / 等待解锁页
+                bootstrap: tab === 'fetus' ? 'demo-fetus-progress' : 'demo-born-empty',
+              });
             }}
             onTapFamilyGuide={(tab) => {
               setHomeReturnScreen('meiyou');
               goToLayoutPicker({
                 backTarget: 'meiyou',
-                bootstrap: tab === 'fetus' ? 'demo-fetus-progress' : 'demo-born-progress',
+                // 胎宝宝：立即查看 → 圆环进度 + 上传补格页
+                bootstrap:
+                  tab === 'fetus' ? 'demo-born-empty' : 'demo-born-progress',
               });
             }}
           />
@@ -2827,7 +2606,12 @@ export default function App() {
             onConfirm={(payload) => {
               setSavedCard(payload);
               setScreen('done');
-            }} />
+            }}
+            onOpenWorks={() => {
+              setWorksBackScreen('layout');
+              setScreen('works');
+            }}
+          />
         )}
         {screen === 'done' && savedCard && (
           <CompletionPage
@@ -2840,10 +2624,14 @@ export default function App() {
               setSavedCard(null);
               goToLayoutPicker({ backTarget: 'home' });
             }}
-            onWorks={() => setScreen('works')} />
+            onWorks={() => {
+              setWorksBackScreen('home');
+              setScreen('works');
+            }}
+          />
         )}
         {screen === 'works' && (
-          <WorksPage onBack={() => setScreen('home')} />
+          <WorksPage onBack={() => setScreen(worksBackScreen)} />
         )}
       </IOSDevice>
     </div>

@@ -5,7 +5,7 @@ const BASE_CELL_H = 72;
 const BASE_GAP = 4;
 const BASE_PAD = 4;
 
-/** 与成长纪念卡首页 Demo 一致的 9 张图与散落初值 */
+/** 与纪念拼图首页 Demo 一致的 9 张图与散落初值 */
 export const SCATTER_DEMO_PHOTOS = [
   { src: 'assets/p1.jpg', chaos: { x: -8, y: 10, r: -22 } },
   { src: 'assets/p2.jpg', chaos: { x: 44, y: -4, r: 14 } },

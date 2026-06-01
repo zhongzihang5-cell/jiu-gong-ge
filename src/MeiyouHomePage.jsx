@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MY, FONT } from './meiyou-theme';
 import { ScatterGridPolaroid } from './ScatterGridPolaroid';
+import { MemorialTimelineProgressGuide } from './MemorialStoryRingHeader';
 
 function IconSearch() {
   return (
@@ -265,9 +266,9 @@ function MemorialTimelineGuideCard({
 export function MeiyouHomePage({
   /** 传入 `'fetus'`｜`'baby'` 切换两套个人中心 */
   onOpenBabyProfile,
-  /** 推广条「立即体验」—— 已出生宝宝演示：九宫格全无真实照片、「＋」+ 弱兜底图 + 顶部引导 */
+  /** 推广条「立即体验」—— `(tab)` 胎宝宝→等待解锁页，宝宝→前两格示例+上传 */
   onTapTryNow,
-  /** 时间轴 guide「点击查看」—— 传入当前顶栏；胎宝宝走里程碑占位演示，已出生走原茄子占位 */
+  /** 时间轴「立即查看/点击查看」—— 胎宝宝→圆环+上传页，宝宝→部分进度演示 */
   onTapFamilyGuide,
 }) {
   const [bottomTab, setBottomTab] = useState(0);
@@ -523,7 +524,7 @@ export function MeiyouHomePage({
           </div>
           )}
 
-          {/* 散落照片纪念卡 · 宫格下一行（宝宝 / 胎宝宝共用） */}
+          {/* 散落照片纪念拼图 · 宫格下一行（宝宝 / 胎宝宝共用） */}
           <div style={{
             margin: '12px 12px 0',
             background: MY.white,
@@ -540,7 +541,7 @@ export function MeiyouHomePage({
             <button
               type="button"
               onClick={() => {
-                if (onTapTryNow) onTapTryNow();
+                if (onTapTryNow) onTapTryNow(homeTopTab);
                 else onTapFamilyGuide?.(homeTopTab);
               }}
               style={{
@@ -581,12 +582,19 @@ export function MeiyouHomePage({
                 {homeTopTab === 'baby' ? '今天　3岁11天' : '今天　孕36周5天'}
               </div>
 
-              <MemorialTimelineGuideCard
-                visible={homeTopTab === 'baby' ? timelineGuideBaby : timelineGuideFetus}
-                onClose={() =>
-                  (homeTopTab === 'baby' ? setTimelineGuideBaby : setTimelineGuideFetus)(false)}
-                onTapView={() => onTapFamilyGuide?.(homeTopTab)}
-              />
+              {homeTopTab === 'baby' ? (
+                <MemorialTimelineGuideCard
+                  visible={timelineGuideBaby}
+                  onClose={() => setTimelineGuideBaby(false)}
+                  onTapView={() => onTapFamilyGuide?.('baby')}
+                />
+              ) : (
+                <MemorialTimelineProgressGuide
+                  visible={timelineGuideFetus}
+                  onClose={() => setTimelineGuideFetus(false)}
+                  onTapView={() => onTapFamilyGuide?.('fetus')}
+                />
+              )}
 
               {/* 胎宝宝 · 占位发育动态（示意） */}
               {homeTopTab === 'fetus' && (

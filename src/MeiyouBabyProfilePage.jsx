@@ -292,12 +292,14 @@ function BabyBornProfileBody({ promoVisible, setPromoVisible, onGoGrowthCard }) 
         <Divider />
         <MenuRow iconBg="#ebe8ff" icon="💌" label="未来寄语" />
         <Divider />
-        <MenuRow iconBg="#eae6ff" icon="🎬" label="MV制作" badge="NEW" badgeBg="#ffccd8" />
+        <MenuRow iconBg="#eae6ff" icon="🎬" label="制作宝宝MV" />
         <Divider />
         <MenuRow
           iconBg={MY.brandSoft}
           icon="🧩"
-          label="制作成长纪念卡"
+          label="制作纪念拼图"
+          badge="NEW"
+          badgeBg="#ffccd8"
           onClick={() => onGoGrowthCard?.()}
         />
       </WhiteCard>
@@ -460,12 +462,14 @@ function FetusProfileBody({ onGoGrowthCard }) {
         <Divider />
         <MenuRow iconBg={MY.brandSoft} icon="⚖️" label="胎儿估重" />
         <Divider />
-        <MenuRow iconBg="#eae6ff" icon="🎬" label="MV制作" />
+        <MenuRow iconBg="#eae6ff" icon="🎬" label="制作宝宝MV" />
         <Divider />
         <MenuRow
           iconBg="#fff5f9"
           icon="🧩"
-          label="制作成长纪念卡"
+          label="制作纪念拼图"
+          badge="NEW"
+          badgeBg="#ffccd8"
           onClick={() => onGoGrowthCard?.()}
         />
         <Divider />
