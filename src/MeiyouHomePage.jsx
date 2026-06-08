@@ -223,7 +223,7 @@ function MemorialTimelineGuideCard({
           marginBottom: 10,
         }}
         >
-          用拼图记录这一刻的小美好
+          用九宫格记录这一刻的小美好
         </div>
         <button
           type="button"
@@ -268,8 +268,10 @@ export function MeiyouHomePage({
   onOpenBabyProfile,
   /** 推广条「立即体验」—— `(tab)` 胎宝宝→等待解锁页，宝宝→前两格示例+上传 */
   onTapTryNow,
-  /** 时间轴「立即查看/点击查看」—— 胎宝宝→圆环+上传页，宝宝→部分进度演示 */
+  /** 时间轴「立即查看/点击查看」—— 胎宝宝→已完成九宫格，宝宝→部分进度演示 */
   onTapFamilyGuide,
+  /** 引导条 / 引导图 · 查看已完成（返回关闭） */
+  onTapGuideView,
 }) {
   const [bottomTab, setBottomTab] = useState(0);
   /** 顶栏中部：宝宝主页 / 胎宝宝（孕期）视图 */
@@ -541,8 +543,12 @@ export function MeiyouHomePage({
             <button
               type="button"
               onClick={() => {
+                const viewHandler = onTapGuideView ?? onTapFamilyGuide;
+                if (viewHandler) {
+                  viewHandler(homeTopTab);
+                  return;
+                }
                 if (onTapTryNow) onTapTryNow(homeTopTab);
-                else onTapFamilyGuide?.(homeTopTab);
               }}
               style={{
                 flexShrink: 0,
@@ -552,7 +558,7 @@ export function MeiyouHomePage({
                 fontSize: 13, fontWeight: 500, cursor: 'pointer',
                 whiteSpace: 'nowrap',
               }}
-            >立即体验
+            >立即查看
             </button>
           </div>
 
@@ -586,13 +592,13 @@ export function MeiyouHomePage({
                 <MemorialTimelineGuideCard
                   visible={timelineGuideBaby}
                   onClose={() => setTimelineGuideBaby(false)}
-                  onTapView={() => onTapFamilyGuide?.('baby')}
+                  onTapView={() => (onTapGuideView ?? onTapFamilyGuide)?.('baby')}
                 />
               ) : (
                 <MemorialTimelineProgressGuide
                   visible={timelineGuideFetus}
                   onClose={() => setTimelineGuideFetus(false)}
-                  onTapView={() => onTapFamilyGuide?.('fetus')}
+                  onTapView={() => (onTapGuideView ?? onTapFamilyGuide)?.('fetus')}
                 />
               )}
 

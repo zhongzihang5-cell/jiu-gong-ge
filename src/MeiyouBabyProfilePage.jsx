@@ -297,7 +297,7 @@ function BabyBornProfileBody({ promoVisible, setPromoVisible, onGoGrowthCard }) 
         <MenuRow
           iconBg={MY.brandSoft}
           icon="🧩"
-          label="制作纪念拼图"
+          label="制作宝宝九宫格"
           badge="NEW"
           badgeBg="#ffccd8"
           onClick={() => onGoGrowthCard?.()}
@@ -467,7 +467,7 @@ function FetusProfileBody({ onGoGrowthCard }) {
         <MenuRow
           iconBg="#fff5f9"
           icon="🧩"
-          label="制作纪念拼图"
+          label="制作宝宝九宫格"
           badge="NEW"
           badgeBg="#ffccd8"
           onClick={() => onGoGrowthCard?.()}

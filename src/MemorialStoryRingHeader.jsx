@@ -178,6 +178,182 @@ export function MemorialStoryRingHeader({
   const cx = wrap / 2;
   const cSafe = Math.min(collected, total);
   const rest = Math.max(0, total - cSafe);
+  const isFullyComplete = pct >= 100 && cSafe >= total;
+
+  if (isFullyComplete) {
+    const completeWrap = 82;
+    const completeCx = completeWrap / 2;
+    const completeRingR = 36;
+
+    return (
+      <div style={{
+        flexShrink: 0,
+        padding: '16px 14px 15px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        fontFamily: FONT,
+        background:
+          'linear-gradient(128deg, #fff9fc 0%, #fff3f8 38%, #fffaf4 72%, #fffefb 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 14,
+            fontSize: 11,
+            color: 'rgba(255,77,136,0.22)',
+            lineHeight: 1,
+          }}
+        >
+          ✦
+        </span>
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            bottom: 12,
+            right: 42,
+            fontSize: 8,
+            color: 'rgba(255,180,100,0.35)',
+            lineHeight: 1,
+          }}
+        >
+          ✦
+        </span>
+
+        <div
+          aria-hidden
+          style={{
+            flexShrink: 0,
+            width: completeWrap,
+            height: completeWrap,
+            position: 'relative',
+          }}
+        >
+          <div style={{
+            position: 'absolute',
+            inset: 2,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,77,136,0.14) 0%, transparent 68%)',
+            pointerEvents: 'none',
+          }}
+          />
+          <svg
+            width={completeWrap}
+            height={completeWrap}
+            viewBox={`0 0 ${completeWrap} ${completeWrap}`}
+            style={{ position: 'absolute', left: 0, top: 0 }}
+          >
+            <defs>
+              <linearGradient id="ringCompleteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ff6e9c" />
+                <stop offset="55%" stopColor="#ff4d88" />
+                <stop offset="100%" stopColor="#ffb86c" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx={completeCx}
+              cy={completeCx}
+              r={completeRingR}
+              fill="none"
+              stroke="rgba(255,77,136,0.1)"
+              strokeWidth="3.5"
+            />
+            <circle
+              cx={completeCx}
+              cy={completeCx}
+              r={completeRingR}
+              fill="none"
+              stroke="url(#ringCompleteGrad)"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 52,
+            height: 52,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            border: '1.5px solid rgba(255,255,255,0.95)',
+            boxShadow:
+              '0 0 0 1px rgba(255,77,136,0.12), 0 4px 14px rgba(255,77,136,0.14)',
+            boxSizing: 'border-box',
+          }}
+          >
+            <BirthProgressNineMini
+              gap={1}
+              firstSixSrc={firstSixSrc}
+              fetusNineMiniLuxury={fetusNineMiniLuxury}
+              nineSlots={nineSlots}
+            />
+          </div>
+          <div style={{
+            position: 'absolute',
+            right: 4,
+            bottom: 6,
+            width: 18,
+            height: 18,
+            borderRadius: 9,
+            background: 'linear-gradient(135deg, #ff6e9c 0%, #ff4d88 100%)',
+            border: '1.5px solid #fff',
+            boxShadow: '0 2px 6px rgba(255,77,136,0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 9,
+            color: '#fff',
+            lineHeight: 1,
+          }}
+          >
+            ✓
+          </div>
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '3px 10px',
+            borderRadius: 80,
+            background: 'rgba(255,77,136,0.08)',
+            border: '0.5px solid rgba(255,77,136,0.14)',
+            marginBottom: 8,
+          }}
+          >
+            <span style={{ fontSize: 11, lineHeight: 1 }} aria-hidden>🎉</span>
+            <span style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: MY.brand,
+              letterSpacing: 0.3,
+            }}
+            >
+              圆满达成
+            </span>
+          </div>
+          <div style={{
+            fontSize: 14,
+            fontWeight: 500,
+            color: MY.text,
+            lineHeight: 1.35,
+          }}
+          >
+            恭喜，{babyName}的九宫格已拼满
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -261,39 +437,43 @@ export function MemorialStoryRingHeader({
           lineHeight: 1.35,
         }}
         >
-          {babyName}的专属拼图 · 已完成
+          {babyName}的专属九宫格 · 已完成
           <span style={{ color: MY.brand }}>{pct}%</span>
         </div>
-        <div style={{
-          fontSize: 11,
-          color: MY.textSub,
-          lineHeight: 1.43,
-          marginBottom: 10,
-        }}
-        >
-          已完成{' '}
-          <span style={{ color: MY.brand, fontWeight: 500 }}>
-            {cSafe}/{total}
-          </span>
-          {' '}· 再填 {rest} 格即可生成
-        </div>
-        <button
-          type="button"
-          onClick={onPreviewTap}
-          style={{
-            background: '#fff5f9',
-            padding: '6px 14px',
-            borderRadius: 80,
-            fontSize: 12,
-            fontWeight: 500,
-            color: MY.brand,
-            cursor: onPreviewTap ? 'pointer' : 'default',
-            letterSpacing: 0.2,
-            border: `0.5px solid rgba(255,91,138,0.18)`,
-          }}
-        >
-          {actionLabel}
-        </button>
+        {!isFullyComplete && (
+          <>
+            <div style={{
+              fontSize: 11,
+              color: MY.textSub,
+              lineHeight: 1.43,
+              marginBottom: 10,
+            }}
+            >
+              已完成{' '}
+              <span style={{ color: MY.brand, fontWeight: 500 }}>
+                {cSafe}/{total}
+              </span>
+              {' '}· 再填 {rest} 格即可生成
+            </div>
+            <button
+              type="button"
+              onClick={onPreviewTap}
+              style={{
+                background: '#fff5f9',
+                padding: '6px 14px',
+                borderRadius: 80,
+                fontSize: 12,
+                fontWeight: 500,
+                color: MY.brand,
+                cursor: onPreviewTap ? 'pointer' : 'default',
+                letterSpacing: 0.2,
+                border: `0.5px solid rgba(255,91,138,0.18)`,
+              }}
+            >
+              {actionLabel}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

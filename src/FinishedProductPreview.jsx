@@ -1,6 +1,6 @@
 import React from 'react';
-import { ScatterGridPolaroid } from './ScatterGridPolaroid';
 import { MY, FONT } from './meiyou-theme';
+import { PAPER_STYLES } from './paper-styles';
 
 const FONT_SERIF = `"Noto Serif SC", "Songti SC", "STSong", serif`;
 
@@ -14,71 +14,8 @@ const base = typeof import.meta !== 'undefined' && import.meta.env
   : '/';
 const imgUrl = (p) => (p.startsWith('/') ? p : `${base}${p}`);
 
-/** 3×3 拍立得小格 · 与设计稿手写脚标风格一致 */
-function PreviewPolaroidNine({ captions, compact = false }) {
-  const list = captions.length >= 9
-    ? captions.slice(0, 9)
-    : [...captions, ...Array.from({ length: 9 - captions.length }, (_, i) => `瞬间 ${i + 1}`)];
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: compact ? 4 : 6,
-      padding: compact ? '6px 6px 8px' : '10px 10px 12px',
-      boxSizing: 'border-box',
-      width: '100%',
-    }}
-    >
-      {list.map((cap, i) => (
-        <div
-          key={i}
-          style={{
-            background: '#fff',
-            padding: compact ? '2px 2px 4px' : '4px 4px 6px',
-            borderRadius: 3,
-            boxShadow: '0 1px 4px rgba(60,35,42,0.06)',
-          }}
-        >
-          <div style={{
-            borderRadius: 2,
-            overflow: 'hidden',
-            aspectRatio: '1 / 1',
-            background: '#f5ebe4',
-          }}
-          >
-            <img
-              src={imgUrl(PREVIEW_SLOTS[i % PREVIEW_SLOTS.length])}
-              alt=""
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-              }}
-            />
-          </div>
-          {compact ? null : (
-            <div style={{
-              fontFamily: FONT_SERIF,
-              fontSize: 7.5,
-              fontStyle: 'italic',
-              color: MY.textSub,
-              marginTop: 4,
-              lineHeight: 1.25,
-              textAlign: 'center',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-            >
-              {cap}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+const PREGNANCY_CAPS = ['验孕', '胎心初照', '囤货角', 'B 超剪影', '孕肚合拍', '水果周', '准爸留影', '产检日', '足月倒数'];
+const BABY_CAPS = ['出生第 1 天', '第 7 天', '满月', '百天', '半岁', '9 个月', '周岁', '学步', '全家福'];
 
 function MiniPhoto({ srcIndex, style }) {
   return (
@@ -96,206 +33,189 @@ function MiniPhoto({ srcIndex, style }) {
   );
 }
 
-/** 双列流卡片内的模板缩略示意 */
-function TemplatePreviewThumb({ kind, captions }) {
-  const wrap = (children) => (
+/** 四格 / 九格缩略示意 · 带纸框样式 */
+function TemplatePreviewThumb({ kind, paperId, withCaption, captions }) {
+  const paper = PAPER_STYLES[paperId] || PAPER_STYLES.warm;
+  const cols = kind === 'grid4' ? 2 : 3;
+  const count = kind === 'grid4' ? 4 : 9;
+  const capList = captions?.length
+    ? captions.slice(0, count)
+    : Array.from({ length: count }, (_, i) => `瞬间 ${i + 1}`);
+
+  return (
     <div style={{
       width: '100%',
       height: '100%',
-      background: '#fbf6f3',
+      background: paper.thumbBg,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
       boxSizing: 'border-box',
+      padding: 10,
     }}
     >
-      {children}
+      <div style={{
+        width: kind === 'grid4' ? '72%' : '88%',
+        aspectRatio: '1 / 1',
+        background: paper.frameBg,
+        border: `1.5px solid ${paper.border}`,
+        borderRadius: 4,
+        boxShadow: `inset 0 0 0 3px #fff, inset 0 0 0 4px ${paper.innerLine}`,
+        padding: withCaption ? 6 : 4,
+        boxSizing: 'border-box',
+      }}
+      >
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gap: withCaption ? 3 : 2,
+          height: '100%',
+        }}
+        >
+          {Array.from({ length: count }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                background: '#fff',
+                borderRadius: 2,
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{ flex: 1, minHeight: 0, background: '#f0e8e2' }}>
+                <MiniPhoto srcIndex={i} />
+              </div>
+              {withCaption && (
+                <div style={{
+                  flexShrink: 0,
+                  fontFamily: FONT_SERIF,
+                  fontSize: 5.5,
+                  fontStyle: 'italic',
+                  color: MY.textSub,
+                  textAlign: 'center',
+                  padding: '2px 1px',
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                >
+                  {capList[i]}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
-
-  if (kind === 'scatter') {
-    return wrap(
-      <ScatterGridPolaroid
-        active={false}
-        scale={0.52}
-        dashedBorderColor="rgba(255,91,138,0.28)"
-        templateBg="#fff8fa"
-        organizedHoldMs={5200}
-        scatterDelayMs={900}
-      />
-    );
-  }
-
-  if (kind === 'grid') {
-    return wrap(<PreviewPolaroidNine captions={captions} compact />);
-  }
-
-  if (kind === 'cols4') {
-    return wrap(
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 3,
-        width: '92%',
-        height: '88%',
-      }}
-      >
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} style={{ borderRadius: 2, overflow: 'hidden', background: '#eee' }}>
-            <MiniPhoto srcIndex={i + 2} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (kind === 'big1') {
-    return wrap(
-      <div style={{
-        display: 'grid',
-        gridTemplateRows: '3fr 2fr',
-        gap: 3,
-        width: '92%',
-        height: '88%',
-      }}
-      >
-        <div style={{ borderRadius: 2, overflow: 'hidden' }}>
-          <MiniPhoto srcIndex={0} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, minHeight: 0 }}>
-          <div style={{ borderRadius: 2, overflow: 'hidden' }}><MiniPhoto srcIndex={1} /></div>
-          <div style={{ borderRadius: 2, overflow: 'hidden' }}><MiniPhoto srcIndex={2} /></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (kind === 'grid4') {
-    return wrap(
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gridTemplateRows: '1fr 1fr',
-        gap: 3,
-        width: '86%',
-        aspectRatio: '1 / 1',
-      }}
-      >
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} style={{ borderRadius: 2, overflow: 'hidden' }}>
-            <MiniPhoto srcIndex={i + 3} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (kind === 'v3') {
-    return wrap(
-      <div style={{
-        display: 'grid',
-        gridTemplateRows: 'repeat(3, 1fr)',
-        gap: 3,
-        width: '72%',
-        height: '90%',
-      }}
-      >
-        {[0, 1, 2].map((i) => (
-          <div key={i} style={{ borderRadius: 2, overflow: 'hidden' }}>
-            <MiniPhoto srcIndex={i + 4} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return wrap(<PreviewPolaroidNine captions={captions ?? []} compact />);
 }
 
-/** 成品预览 · 各模板双列流介绍 */
+/** 成品预览 · 四格/九格 × 四种纸框样式 */
 const TEMPLATE_SHOWCASE = [
   {
-    id: 'scatter',
-    name: '散落拼贴',
-    theme: '通用',
-    cells: 9,
-    ratio: '1:1',
-    desc: '相册里的零碎瞬间，自动归位成完整故事',
-    kind: 'scatter',
-    previewH: 168,
-  },
-  {
-    id: '3x3-c',
-    name: '九宫格·文案',
+    id: '3x3-warm-c',
+    name: '九格 · 暖棕经典·文案',
     theme: '孕期时光',
     cells: 9,
     ratio: '1:1',
-    desc: '孕周 milestone 标注，一天一天更靠近 TA',
-    kind: 'grid',
-    captions: ['验孕', '胎心初照', '囤货角', 'B 超剪影', '孕肚合拍', '水果周', '准爸留影', '产检日', '足月倒数'],
+    desc: '暖棕双层边框，孕周 milestone 温柔标注',
+    kind: 'grid9',
+    paperId: 'warm',
+    withCaption: true,
+    captions: PREGNANCY_CAPS,
     previewH: 152,
   },
   {
-    id: 'cols4-c',
-    name: '四联竖栏·文案',
-    theme: '孕期时光',
-    cells: 4,
-    ratio: '2:3',
-    desc: '纵向四段旅程，适合记录连续变化',
-    kind: 'cols4',
-    previewH: 184,
-  },
-  {
-    id: 'big1-c',
-    name: '主图·文案',
-    theme: '宝宝成长',
-    cells: 3,
-    ratio: '4:3',
-    desc: '一张主图定格高光，其余补充细节',
-    kind: 'big1',
-    previewH: 148,
-  },
-  {
-    id: '2x2',
-    name: '经典四宫格',
+    id: '2x2-blush',
+    name: '四格 · 粉柔暖阳',
     theme: '宝宝成长',
     cells: 4,
     ratio: '1:1',
-    desc: '四季四帧，版面干净、重点清晰',
+    desc: '蜜桃粉边柔底，四季四帧干净留念',
     kind: 'grid4',
+    paperId: 'blush',
+    withCaption: false,
     previewH: 132,
   },
   {
-    id: 'v3-c',
-    name: '竖排·文案',
+    id: '3x3-sage-c',
+    name: '九格 · 清新成长·文案',
     theme: '宝宝成长',
-    cells: 3,
-    ratio: '3:4',
-    desc: '竖向三联对比，成长变化一目了然',
-    kind: 'v3',
-    previewH: 176,
+    cells: 9,
+    ratio: '1:1',
+    desc: '薄荷绿边浅底，成长瞬间清爽拼合',
+    kind: 'grid9',
+    paperId: 'sage',
+    withCaption: true,
+    captions: BABY_CAPS,
+    previewH: 152,
   },
   {
-    id: 'rows3-c',
-    name: '三排·文案',
+    id: '2x2-kraft-c',
+    name: '四格 · 自然原色·文案',
     theme: '孕期时光',
-    cells: 3,
-    ratio: '3:4',
-    desc: '横向三段时间线，适合阶段回顾',
-    kind: 'v3',
-    previewH: 160,
+    cells: 4,
+    ratio: '1:1',
+    desc: '暖褐自然底，阶段回顾质朴耐看',
+    kind: 'grid4',
+    paperId: 'kraft',
+    withCaption: true,
+    captions: PREGNANCY_CAPS.slice(0, 4),
+    previewH: 136,
   },
   {
-    id: 'h3-c',
-    name: '横排·文案',
-    theme: '宝宝成长',
-    cells: 3,
-    ratio: '3:2',
-    desc: '宽屏横排三联，分享图更舒展',
-    kind: 'grid',
-    captions: ['出生第 1 天', '第 7 天', '满月', '百天', '半岁', '9 个月', '周岁', '学步', '全家福'],
+    id: '3x3-blush',
+    name: '九格 · 粉柔暖阳',
+    theme: '孕期时光',
+    cells: 9,
+    ratio: '1:1',
+    desc: '粉边柔底九格，一天一天更靠近 TA',
+    kind: 'grid9',
+    paperId: 'blush',
+    withCaption: false,
     previewH: 148,
+  },
+  {
+    id: '2x2-warm-c',
+    name: '四格 · 暖棕经典·文案',
+    theme: '宝宝成长',
+    cells: 4,
+    ratio: '1:1',
+    desc: '经典暖棕四格，高光瞬间重点清晰',
+    kind: 'grid4',
+    paperId: 'warm',
+    withCaption: true,
+    captions: BABY_CAPS.slice(0, 4),
+    previewH: 136,
+  },
+  {
+    id: '3x3-kraft',
+    name: '九格 · 自然原色',
+    theme: '宝宝成长',
+    cells: 9,
+    ratio: '1:1',
+    desc: '自然原色九格，适合长久珍藏分享',
+    kind: 'grid9',
+    paperId: 'kraft',
+    withCaption: false,
+    previewH: 148,
+  },
+  {
+    id: '2x2-sage-c',
+    name: '四格 · 清新成长·文案',
+    theme: '孕期时光',
+    cells: 4,
+    ratio: '1:1',
+    desc: '清新绿边四格，连续变化一目了然',
+    kind: 'grid4',
+    paperId: 'sage',
+    withCaption: true,
+    captions: PREGNANCY_CAPS.slice(0, 4),
+    previewH: 136,
   },
 ];
 
@@ -305,7 +225,7 @@ function TemplateFlowCard({ item }) {
       background: MY.white,
       borderRadius: 12,
       overflow: 'hidden',
-      border: `0.5px solid rgba(0,0,0,0.06)`,
+      border: '0.5px solid rgba(0,0,0,0.06)',
       boxShadow: '0 4px 16px rgba(80,35,48,0.06)',
       display: 'flex',
       flexDirection: 'column',
@@ -317,7 +237,12 @@ function TemplateFlowCard({ item }) {
         borderBottom: `0.5px solid ${MY.line}`,
       }}
       >
-        <TemplatePreviewThumb kind={item.kind} captions={item.captions} />
+        <TemplatePreviewThumb
+          kind={item.kind}
+          paperId={item.paperId}
+          withCaption={item.withCaption}
+          captions={item.captions}
+        />
       </div>
       <div style={{ padding: '10px 10px 12px' }}>
         <div style={{
@@ -382,13 +307,12 @@ export function FinishedProductPreviewOverlay({ onClose }) {
       flexDirection: 'column',
       background:
         'linear-gradient(175deg,' +
-        `#fff8fc 0%, #fff5f7 26%, ` +
+        '#fff8fc 0%, #fff5f7 26%, ' +
         '#fffcfa 55%, #fffdfb 100%)',
       overflow: 'hidden',
       fontFamily: FONT,
     }}
     >
-      {/* 顶栏 · 与替换照片等页一致 */}
       <div style={{
         flexShrink: 0,
         padding: '52px 16px 10px',
@@ -460,7 +384,7 @@ export function FinishedProductPreviewOverlay({ onClose }) {
             padding: '8px 16px',
             borderRadius: 80,
             background: MY.white,
-            border: `0.5px solid rgba(255,77,136,0.18)`,
+            border: '0.5px solid rgba(255,77,136,0.18)',
             boxShadow: '0 6px 20px rgba(255,115,148,0.08)',
           }}
           >
@@ -475,7 +399,7 @@ export function FinishedProductPreviewOverlay({ onClose }) {
             />
             <span style={{ fontSize: 12, fontWeight: 400, color: MY.text }}>
               <span style={{ color: MY.brand, fontWeight: 500 }}>12,886</span>
-              {' '}位妈妈已为宝宝生成纪念拼图
+              {' '}位妈妈已为宝宝生成纪念九宫格
             </span>
           </div>
 
@@ -490,7 +414,7 @@ export function FinishedProductPreviewOverlay({ onClose }) {
             textAlign: 'center',
           }}
           >
-            多种模板，拼出你的故事
+            四格与九格，拼出你的故事
           </h1>
           <p style={{
             fontSize: 13,
@@ -502,11 +426,10 @@ export function FinishedProductPreviewOverlay({ onClose }) {
             margin: 0,
           }}
           >
-            下滑浏览不同版式成品，选最适合你相册的一种。
+            下滑浏览不同纸框样式成品，选最适合你相册的一种。
           </p>
         </div>
 
-        {/* 双列模板流 */}
         <div style={{
           columnCount: 2,
           columnGap: 12,
