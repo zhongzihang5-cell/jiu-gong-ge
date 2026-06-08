@@ -1831,7 +1831,7 @@ function LayoutPickerPage({
       }}>
         {/* 左：返回按钮（edit 模式显示文字） */}
         <button
-          onClick={isEdit ? (closeOnBack ? onBack : () => setViewMode('layout')) : onBack}
+          onClick={isEdit ? (isPushEntry || closeOnBack ? onBack : () => setViewMode('layout')) : onBack}
           style={{
             height: 36, border: 0, background: 'transparent',
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
