@@ -515,24 +515,25 @@ function PushTweakBar({ value, onChange }) {
   );
 }
 
-/** 孕期时光 / 宝宝成长 · 各含四格 + 九格 × 样式 × 带/不带文案 */
+/** 孕期时光 / 宝宝成长 · 各 2 行 × 4 列（四格 + 九格·文案 × 四种纸框） */
 const GRID_LAYOUTS = (() => {
   const list = [];
   ['孕期时光', '宝宝成长'].forEach((theme) => {
-    [['2x2', '四格', 4], ['3x3', '九格', 9]].forEach(([grid, gridKind, cells]) => {
-      PAPER_IDS.forEach((paperId) => {
-        [false, true].forEach((withCaption) => {
-          const id = withCaption ? `${grid}-${paperId}-c` : `${grid}-${paperId}`;
-          list.push({
-            id,
-            theme,
-            gridKind,
-            paperId,
-            cells,
-            ratio: '1:1',
-            name: `${gridKind} · ${PAPER_STYLES[paperId].name}${withCaption ? '·文案' : ''}`,
-            hot: theme === '孕期时光' && grid === '3x3' && paperId === 'warm' && withCaption,
-          });
+    PAPER_IDS.forEach((paperId) => {
+      [
+        { grid: '2x2', gridKind: '四格', cells: 4, withCaption: false },
+        { grid: '3x3', gridKind: '九格', cells: 9, withCaption: true },
+      ].forEach(({ grid, gridKind, cells, withCaption }) => {
+        const id = withCaption ? `${grid}-${paperId}-c` : `${grid}-${paperId}`;
+        list.push({
+          id,
+          theme,
+          gridKind,
+          paperId,
+          cells,
+          ratio: '1:1',
+          name: `${gridKind} · ${PAPER_STYLES[paperId].name}${withCaption ? '·文案' : ''}`,
+          hot: theme === '孕期时光' && grid === '3x3' && paperId === 'warm' && withCaption,
         });
       });
     });
@@ -697,6 +698,10 @@ function AlbumPhotoPickerOverlay({
   };
 
   const isBatchSelected = (id) => batchOrder.some((x) => x.id === id);
+
+  const removeFromBatch = (id) => {
+    setBatchOrder((prev) => prev.filter((x) => x.id !== id));
+  };
 
   const selectAllInDate = (date) => {
     const g = ALBUM_GROUPS.find((x) => x.date === date);
@@ -881,48 +886,135 @@ function AlbumPhotoPickerOverlay({
         }}
       />
 
-      {/* 底部操作条 */}
+      {/* 底部：提示 + 下一步，其下为已选照片 1 2 3… */}
       <div style={{
         flexShrink: 0,
-        padding: isBatch ? '10px 16px 26px' : '10px 14px 26px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12,
         borderTop: '0.5px solid rgba(255,255,255,0.1)',
         background: '#0a0a0a',
-      }}>
-        {isBatch ? (
-          <span style={{ fontSize: 14, color: textSub, lineHeight: 1.4 }}>
-            请勾选{maxSlots}张照片
-          </span>
-        ) : (
-          <span style={{ fontSize: 13, color: selectedSrc ? text : textSub }}>
-            请选择一张照片
-          </span>
-        )}
-        <button
-          type="button"
-          disabled={isBatch ? !batchOk : !selectedSrc}
-          onClick={() => {
-            if (isBatch) {
-              const ordered = batchOrder.map((x) => x.src).slice(0, maxSlots);
-              onBatchApply?.(ordered);
-            } else if (selectedSrc) {
-              onApply?.(selectedSrc);
-            }
-          }}
-          style={{
-            flexShrink: 0,
-            height: 28, padding: '0 12px', borderRadius: 6, border: 'none',
-            background: (isBatch ? batchOk : !!selectedSrc) ? pink : 'rgba(255,255,255,0.14)',
-            color: (isBatch ? batchOk : !!selectedSrc) ? '#fff' : 'rgba(255,255,255,0.38)',
-            fontSize: 13, fontWeight: 500, letterSpacing: 0.2,
-            cursor: (isBatch ? batchOk : !!selectedSrc) ? 'pointer' : 'default',
-            fontVariantNumeric: 'tabular-nums',
-            opacity: (isBatch ? batchOk : !!selectedSrc) ? 1 : 0.92,
-          }}
+        padding: isBatch ? '10px 16px 26px' : '10px 14px 26px',
+      }}
+      >
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 12,
+        }}
         >
-          {isBatch ? `下一步（${batchCount}/${maxSlots}）` : '完成'}
-        </button>
+          {isBatch ? (
+            <span style={{ fontSize: 14, color: textSub, lineHeight: 1.4 }}>
+              请选择{maxSlots}张照片
+            </span>
+          ) : (
+            <span style={{ fontSize: 13, color: selectedSrc ? text : textSub }}>
+              请选择一张照片
+            </span>
+          )}
+          <button
+            type="button"
+            disabled={isBatch ? !batchOk : !selectedSrc}
+            onClick={() => {
+              if (isBatch) {
+                const ordered = batchOrder.map((x) => x.src).slice(0, maxSlots);
+                onBatchApply?.(ordered);
+              } else if (selectedSrc) {
+                onApply?.(selectedSrc);
+              }
+            }}
+            style={{
+              flexShrink: 0,
+              height: 28, padding: '0 12px', borderRadius: 6, border: 'none',
+              background: (isBatch ? batchOk : !!selectedSrc) ? pink : 'rgba(255,255,255,0.14)',
+              color: (isBatch ? batchOk : !!selectedSrc) ? '#fff' : 'rgba(255,255,255,0.38)',
+              fontSize: 13, fontWeight: 500, letterSpacing: 0.2,
+              cursor: (isBatch ? batchOk : !!selectedSrc) ? 'pointer' : 'default',
+              fontVariantNumeric: 'tabular-nums',
+              opacity: (isBatch ? batchOk : !!selectedSrc) ? 1 : 0.92,
+            }}
+          >
+            {isBatch ? `下一步（${batchCount}/${maxSlots}）` : '完成'}
+          </button>
+        </div>
+
+        {isBatch && batchCount > 0 && (
+          <div style={{
+            marginTop: 12,
+            display: 'flex',
+            gap: 10,
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: 2,
+          }}
+          >
+            {batchOrder.map((item, idx) => (
+              <div
+                key={item.id}
+                style={{
+                  flexShrink: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 5,
+                  width: 56,
+                }}
+              >
+                <div style={{
+                  position: 'relative',
+                  width: 56,
+                  height: 56,
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                  background: '#2c2c2e',
+                }}
+                >
+                  <img
+                    src={item.src}
+                    alt=""
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    aria-label={`移除第 ${idx + 1} 张`}
+                    onClick={() => removeFromBatch(item.id)}
+                    style={{
+                      position: 'absolute',
+                      top: 3,
+                      right: 3,
+                      width: 18,
+                      height: 18,
+                      borderRadius: 9,
+                      border: 'none',
+                      background: 'rgba(0,0,0,0.45)',
+                      color: '#fff',
+                      fontSize: 11,
+                      lineHeight: 1,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: text,
+                  fontVariantNumeric: 'tabular-nums',
+                  lineHeight: 1,
+                }}
+                >
+                  {idx + 1}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1743,6 +1835,7 @@ function LayoutPickerPage({
     if (!editAllRequiredFilled || useFetusLuxuryLocks) return;
     onConfirm({
       layoutId: current.id,
+      layoutName: current.name,
       themeTab: tab,
       cellPhotos: { ...cellPhotos },
       ratio: current.ratio,
@@ -2015,7 +2108,7 @@ function LayoutPickerPage({
       {/* ── 主题 tabs + 缩略图（layout 模式显示，edit 模式收起）── */}
       <div style={{
         overflow: 'hidden', flexShrink: 0,
-        maxHeight: isEdit ? 0 : 300,
+        maxHeight: isEdit ? 0 : 248,
         opacity: isEdit ? 0 : 1,
         transition: 'max-height 0.3s cubic-bezier(.4,0,.2,1), opacity 0.2s',
       }}>
@@ -2383,7 +2476,7 @@ function ShareSheet({ onClose }) {
           <div style={{ width: 36, height: 4, borderRadius: 2, background: C.line }} />
         </div>
         <div style={{ fontSize: 15, fontWeight: 600, textAlign: 'center', padding: '8px 0 18px', color: C.ink }}>
-          分享纪念九宫格
+          分享纪念拼图
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 20 }}>
           {SHARE_APPS.map((app) => (
@@ -2491,7 +2584,7 @@ function CompletionPage({ card, onClose, onMakeAnother, onWorks }) {
         {/* 标题 */}
         <div style={{ marginTop: 16, textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <div style={{ fontFamily: FONT_SERIF, fontSize: 30, fontWeight: 700, color: C.ink, letterSpacing: 1 }}>
-            纪念九宫格已保存
+            纪念拼图已保存
           </div>
           <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>已自动保存至时间轴</div>
         </div>
@@ -2557,13 +2650,20 @@ function CompletionPage({ card, onClose, onMakeAnother, onWorks }) {
 }
 
 // ── 我的作品页 ───────────────────────────────────────────────────
-const MOCK_WORKS = [
-  { id: 1, name: '豆豆的成长纪念九宫格', date: '2026.05.18', photos: [0,1,2,3,4,5,6,7,8] },
-  { id: 2, name: '豆豆的成长纪念九宫格', date: '2026.05.15', photos: [1,2,3,4,5,6,0,7,2] },
-  { id: 3, name: '豆豆的成长纪念九宫格', date: '2026.05.10', photos: [3,4,5,0,1,6,2,7,1] },
+const INITIAL_WORKS = [
+  { id: 1, name: '九格 · 暖棕经典·文案', date: '2026.05.18', layoutId: '3x3-warm-c', photos: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
+  { id: 2, name: '四格 · 粉柔暖阳', date: '2026.05.15', layoutId: '2x2-blush', photos: [1, 2, 3, 4] },
+  { id: 3, name: '九格 · 清新成长·文案', date: '2026.05.10', layoutId: '3x3-sage-c', photos: [3, 4, 5, 0, 1, 6, 2, 7, 1] },
 ];
 
-function WorksPage({ onBack }) {
+function formatWorkDate(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}.${m}.${day}`;
+}
+
+function WorksPage({ works, onBack }) {
   return (
     <div style={{
       width: '100%', height: '100%', overflow: 'hidden', position: 'relative',
@@ -2588,8 +2688,17 @@ function WorksPage({ onBack }) {
 
       {/* 作品列表 */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 32px' }}>
-        {MOCK_WORKS.map((work, index) => {
+        {works.map((work, index) => {
           const isPrint = index === 0;
+          const isFour = String(work.layoutId || '').startsWith('2x2');
+          const cellCount = isFour ? 4 : 9;
+          const thumbSlots = work.cellPhotos
+            ? Array.from({ length: cellCount }, (_, i) => work.cellPhotos[i] ?? null)
+            : (work.photos || []).slice(0, cellCount).map(
+              (pi) => PREVIEW_PHOTOS[pi % PREVIEW_PHOTOS.length],
+            );
+          const paperId = resolvePaperId(work.layoutId);
+          const thumbPaper = PAPER_STYLES[paperId] || PAPER_STYLES.warm;
           return (
           <div key={work.id} style={{
             display: 'flex', alignItems: 'center', gap: 14,
@@ -2598,22 +2707,40 @@ function WorksPage({ onBack }) {
             {/* 缩略图 */}
             <div style={{
               width: 72, height: 72, flexShrink: 0,
-              border: '1px solid #8b7355', borderRadius: 4, overflow: 'hidden',
+              border: `1px solid ${thumbPaper.border}`, borderRadius: 4, overflow: 'hidden',
               boxShadow: 'inset 0 0 0 2px #fff, inset 0 0 0 2.5px rgba(139,115,85,0.2)',
-              background: '#fffaf6',
+              background: thumbPaper.frameBg,
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, padding: 1, height: '100%' }}>
-                {work.photos.slice(0, 9).map((pi, i) => (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${isFour ? 2 : 3}, 1fr)`,
+                gap: 1,
+                padding: 1,
+                height: '100%',
+              }}
+              >
+                {thumbSlots.map((src, i) => (
                   <div key={i} style={{ overflow: 'hidden', background: '#ddd6cf' }}>
-                    <img src={PREVIEW_PHOTOS[pi % PREVIEW_PHOTOS.length]} alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    {src ? (
+                      <img src={src} alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    ) : null}
                   </div>
                 ))}
               </div>
             </div>
             {/* 信息 */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 500, color: C.ink, fontFamily: FONT_SERIF }}>{work.name}</div>
+              <div style={{
+                fontSize: 14, fontWeight: 500, color: C.ink,
+                lineHeight: 1.35,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              >
+                {work.name}
+              </div>
               <div style={{ fontSize: 11, color: C.mute, marginTop: 4 }}>{work.date}</div>
             </div>
             <button
@@ -2632,7 +2759,7 @@ function WorksPage({ onBack }) {
           </div>
           );
         })}
-        {MOCK_WORKS.length === 0 && (
+        {works.length === 0 && (
           <div style={{ textAlign: 'center', marginTop: 80, color: C.mute, fontSize: 14 }}>
             暂无作品，快去做一张吧 ✨
           </div>
@@ -2646,6 +2773,7 @@ function WorksPage({ onBack }) {
 export default function App() {
   const [screen, setScreen] = useState('meiyou');
   const [savedCard, setSavedCard] = useState(null);
+  const [works, setWorks] = useState(INITIAL_WORKS);
   /** 纪念拼图返回时要去往的上一页（首页引导 / 个人中心等） */
   const [homeReturnScreen, setHomeReturnScreen] = useState('meiyou');
   /** 个人中心：已出生(`baby`) / 胎宝宝(`fetus`) 两套界面 */
@@ -2794,6 +2922,13 @@ export default function App() {
             onBack={() => setScreen(layoutSession.backTarget)}
             onConfirm={(payload) => {
               setSavedCard(payload);
+              setWorks((prev) => [{
+                id: Date.now(),
+                name: payload.layoutName || '纪念拼图',
+                date: formatWorkDate(),
+                layoutId: payload.layoutId,
+                cellPhotos: payload.cellPhotos,
+              }, ...prev]);
               setScreen('done');
             }}
             onOpenWorks={() => {
@@ -2820,7 +2955,7 @@ export default function App() {
           />
         )}
         {screen === 'works' && (
-          <WorksPage onBack={() => setScreen(worksBackScreen)} />
+          <WorksPage works={works} onBack={() => setScreen(worksBackScreen)} />
         )}
       </IOSDevice>
     </div>
